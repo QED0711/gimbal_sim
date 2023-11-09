@@ -1,8 +1,10 @@
 
 const stateSchema = {
 
-    name: ""
+    map: null, 
+    isPaused: false,
 
+    velocity: 50, 
 }
 
 export default stateSchema;

@@ -7,5 +7,6 @@ docker run --rm -ti \
     -v $PWD/:/home/$(whoami)/app/ \
     -e DISPLAY=$DISPLAY \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
+    -p 3000:1420 \
     gimbal_simulator:dev \
     bash

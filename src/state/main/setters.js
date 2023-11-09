@@ -1,7 +1,12 @@
+import { mainPaths } from "./mainManager";
 
 const setters = {
 
-    // your setters here...
+    togglePause(){
+        this.setState(prevState => {
+            return [{isPaused: !prevState.isPaused}, [mainPaths.isPaused]];
+        })
+    }
 
 }
 
