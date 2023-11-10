@@ -13,6 +13,24 @@ const methods = {
 
         requestAnimationFrame(this.methods.simulateFlight)
     },
+
+    adjustPitch(amount) {
+        if (!!this.state.map) {
+            const radians = Cesium.Math.toRadians(amount);
+            amount < 0
+                ? this.state.map.camera.lookUp(radians)
+                : this.state.map.camera.lookDown(-radians)
+        }
+    },
+
+    adjustHeading(amount){
+        if(!!this.state.map) {
+            const radians = Cesium.Math.toRadians(amount);
+            amount < 0
+                ? this.state.map.camera.lookRight(radians)
+                : this.state.map.camera.lookLeft(-radians)
+        }
+    }
 };
 
 export default methods;
