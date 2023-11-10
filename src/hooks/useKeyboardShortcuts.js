@@ -10,17 +10,20 @@ export default function useKeyboardShortcuts() {
             ArrowDown(){
                 mainManager.methods.adjustPitch(-0.25)
             }, 
-            ArrowLeft(){
-                mainManager.methods.adjustHeading(-0.25)
+            ArrowLeft(e){
+                e.shiftKey
+                    ? mainManager.methods.adjustRoll(-0.25)
+                    : mainManager.methods.adjustHeading(-0.25)
             }, 
-            ArrowRight(){
-                mainManager.methods.adjustHeading(0.25)
+            ArrowRight(e){
+                e.shiftKey
+                ? mainManager.methods.adjustRoll(0.25)
+                : mainManager.methods.adjustHeading(0.25)
             }, 
         }
 
         window.addEventListener("keydown", function(e){
             actions[e.key]?.(e)
-            // actions[]
         })
 
     }, [])

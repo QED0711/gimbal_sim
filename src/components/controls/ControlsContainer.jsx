@@ -3,13 +3,13 @@ import mainManager, { mainPaths } from "../../state/main/mainManager";
 import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
 
 export default function ControlsContainer() {
-    const { state } = useSpiccatoState(mainManager, [mainPaths.velocity]);
+    const { state } = useSpiccatoState(mainManager, [mainPaths.aircraft]);
 
     useKeyboardShortcuts();
     return (
         <div className="fixed top-4 left-4">
             <button onClick={mainManager.setters.togglePause}>Play/Pause</button>
-            <input type="number" value={state.velocity} onChange={e => mainManager.setters.setVelocity(parseInt(e.target.value))} />
+            <input type="number" value={state.aircraft.velocity} onChange={e => mainManager.setters.setAircraft_velocity(parseInt(e.target.value))} />
             <div className="grid grid-cols-3 grid-rows-3">
                 <div></div>
                 <button onClick={() => { mainManager.methods.adjustPitch(1) }}>Up</button>

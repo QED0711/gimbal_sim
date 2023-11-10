@@ -5,7 +5,7 @@ import mainManager, { mainPaths } from "../state/main/mainManager";
 
 export default function MapContainer() {
     // STATE
-    const { state } = useSpiccatoState(mainManager, [mainPaths.map, mainPaths.isPaused]);
+    const { state } = useSpiccatoState(mainManager, [mainPaths.map, mainPaths.isPaused, mainPaths.startPosition, mainPaths.entity]);
 
     // EFFECTS
     useEffect(() => {
@@ -35,28 +35,32 @@ export default function MapContainer() {
         viewer.imageryLayers.addImageryProvider(imageryProvider);
 
         mainManager.setters.setMap(viewer);
+
+    
+
     }, []);
 
     useEffect(() => {
-        if (!!state.map) {
-            const initialPosition = Cesium.Cartesian3.fromDegrees(-77.229176, 38.864188, 15000);
-            const heading = Cesium.Math.toRadians(270);
-            const pitch = Cesium.Math.toRadians(0);
-            const roll = Cesium.Math.toRadians(0);
-
-            state.map.camera.setView({
-                destination: initialPosition,
-                orientation: { roll, pitch, heading },
-            });
+        if(!!state.map) {
+            const aircraftEntity = state.map.entities.add({
+                position: Cesium.Cartesian3.fromDegrees(state.startPosition.lng, state.startPosition.lat, state.startPosition.alt),
+                ellipsoid: {
+                    radii: new Cesium.Cartesian3(10.0, 10.0, 10.0),
+                    material: Cesium.Color.RED.withAlpha(0.75)
+                }
+            })
+            mainManager.setters.setEntity(aircraftEntity);
+            state.map.trackedEntity = aircraftEntity;
 
         }
-    }, [state.map]);
+
+    }, [state.map, state.startPosition])
 
     useEffect(() => {
         if (!!state.map) {
-            mainManager.methods.simulateFlight();
+            mainManager.methods.updateAircraft();
         }
-    }, [state.isPaused, state.map]);
+    }, [state.isPaused, state.map, state.entity]);
 
     return <div id="map" className="w-screen h-screen"></div>;
 }
