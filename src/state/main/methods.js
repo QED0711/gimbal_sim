@@ -1,7 +1,7 @@
 import * as Cesium from "cesium";
 
 const methods = {
-    updateAircraft() {
+    async updateAircraft() {
         if (!this.state.map || this.state.isPaused || !this.state.entity) return;
         const deltaTime = 0.1;
         const { aircraft: av, map, entity } = this.state;
@@ -36,7 +36,17 @@ const methods = {
         // Update the aircraft's position
         const newPosition = new Cesium.Cartesian3();
         Cesium.Cartesian3.add(aircraftPosition, movementVector, newPosition);
-        entity.position = newPosition;
+        const cartographicPosition = Cesium.Cartographic.fromCartesian(newPosition);
+        this.setters.setPosition({
+            lng: Cesium.Math.toDegrees(cartographicPosition.longitude),
+            lat: Cesium.Math.toDegrees(cartographicPosition.latitude),
+            alt: cartographicPosition.height
+        })
+        // debugger
+        // console.log(newPosition);
+        // entity.position = newPosition;
+
+        // await new Promise(r => setTimeout(r, 1000));
 
         requestAnimationFrame(this.methods.updateAircraft);
     },

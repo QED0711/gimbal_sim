@@ -43,7 +43,11 @@ export default function MapContainer() {
     useEffect(() => {
         if(!!state.map) {
             const aircraftEntity = state.map.entities.add({
-                position: Cesium.Cartesian3.fromDegrees(state.startPosition.lng, state.startPosition.lat, state.startPosition.alt),
+                position: new Cesium.CallbackProperty(() => {
+                    const position = mainManager.getters.getPosition();
+                    return Cesium.Cartesian3.fromDegrees(position.lng, position.lat, position.alt)
+                }, false),
+                // position: Cesium.Cartesian3.fromDegrees(state.startPosition.lng, state.startPosition.lat, state.startPosition.alt),
                 ellipsoid: {
                     radii: new Cesium.Cartesian3(10.0, 10.0, 10.0),
                     material: Cesium.Color.RED.withAlpha(0.75)
