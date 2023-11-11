@@ -62,9 +62,16 @@ export default function MapContainer() {
 
     useEffect(() => {
         if (!!state.map) {
-            mainManager.methods.updateAircraft();
+            if(!state.isPaused && !window._updateInterval){
+                window._updateInterval = setInterval(mainManager.methods.updateAircraftPosition, 33)
+            } else {
+                clearInterval(window._updateInterval);
+                window._updateInterval = null;
+                window._lastPositionUpdate = null;
+            }
+            // mainManager.methods.updateAircraftPosition();
         }
-    }, [state.isPaused, state.map, state.entity]);
+    }, [state.isPaused, state.map]);
 
     return <div id="map" className="w-screen h-screen"></div>;
 }

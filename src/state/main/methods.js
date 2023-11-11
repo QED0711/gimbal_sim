@@ -1,54 +1,85 @@
 import * as Cesium from "cesium";
 
+let callCount = 0;
+let lastLogTime = Date.now();
+
+function logCallRate() {
+    const now = Date.now();
+    callCount++;
+
+    if (now - lastLogTime >= 1000) { // Check if one second has passed
+        console.log(`Function called ${callCount} times in the last second.`);
+        callCount = 0; // Reset the counter
+        lastLogTime = now; // Update the last log time
+    }
+}
+
+function calculateSpeed(deltaTimeMs, prevLat, prevLng, curLat, curLng) {
+    // Check if Cesium is loaded
+    if (typeof Cesium === 'undefined') {
+        console.error('Cesium is not loaded');
+        return;
+    }
+
+    // Convert deltaTime from milliseconds to seconds
+    const deltaTimeSeconds = deltaTimeMs / 1000;
+
+    // Create Cesium Cartographic objects for previous and current positions
+    const prevPosition = Cesium.Cartographic.fromDegrees(prevLng, prevLat);
+    const curPosition = Cesium.Cartographic.fromDegrees(curLng, curLat);
+
+    // Calculate the surface distance in meters
+    const surfaceDistance = Cesium.Cartesian3.distance(
+        Cesium.Ellipsoid.WGS84.cartographicToCartesian(prevPosition),
+        Cesium.Ellipsoid.WGS84.cartographicToCartesian(curPosition)
+    );
+
+    // Calculate speed in meters per second
+    const speed = surfaceDistance / deltaTimeSeconds;
+
+    return speed;
+}
+
+
 const methods = {
-    async updateAircraft() {
+    async updateAircraftPosition() {
+        // logCallRate();
         if (!this.state.map || this.state.isPaused || !this.state.entity) return;
-        const deltaTime = 0.1;
-        const { aircraft: av, map, entity } = this.state;
+        const now = Date.now();
+        const deltaTime = (now - (window._lastPositionUpdate ?? now - 33)) / 1000;
+        // const deltaTime = 1 
+        // if(deltaTime === 0) return requestAnimationFrame(this.methods.updateAircraftPosition);
+        // console.log(deltaTime)
+        window._lastPositionUpdate = Date.now() 
+        const { aircraft: av, position: currentPosition } = this.state;
+
 
         const headingRadians = Cesium.Math.toRadians(av.heading);
         const pitchRadians = Cesium.Math.toRadians(av.pitch);
 
-        // Calculate the new position
-        // Decompose the movement into the local east-north-up coordinate system
-        const localEast = new Cesium.Cartesian3(-Math.sin(headingRadians), Math.cos(headingRadians), 0);
-        const localNorth = new Cesium.Cartesian3(
-            -Math.cos(headingRadians) * Math.sin(pitchRadians),
-            -Math.sin(headingRadians) * Math.sin(pitchRadians),
-            Math.cos(pitchRadians)
-        );
-        const localUp = new Cesium.Cartesian3(
-            Math.cos(headingRadians) * Math.cos(pitchRadians),
-            Math.sin(headingRadians) * Math.cos(pitchRadians),
-            Math.sin(pitchRadians)
-        );
+        const distanceMoved = av.velocity * deltaTime;
+        const deltaAltitude = distanceMoved * Math.sin(pitchRadians);
+        const horizontalDistance = distanceMoved * Math.cos(pitchRadians);
 
-        // Calculate the movement vector in the local frame
-        const movementVectorLocal = new Cesium.Cartesian3();
-        Cesium.Cartesian3.multiplyByScalar(localNorth, av.velocity * deltaTime, movementVectorLocal);
+        const earthRadius = Cesium.Ellipsoid.WGS84.maximumRadius;
+        const deltaLatitude = (horizontalDistance / earthRadius) * Math.cos(headingRadians);
+        const deltaLongitude =
+            (horizontalDistance / (earthRadius * Math.cos(currentPosition.lat))) * Math.sin(headingRadians);
 
-        // Convert the movement from the local east-north-up frame to the Earth fixed frame
-        const aircraftPosition = this.state.entity.position.getValue(map.clock.currentTime);
-        const transformMatrix = Cesium.Transforms.eastNorthUpToFixedFrame(aircraftPosition);
-        const movementVector = new Cesium.Cartesian3();
-        Cesium.Matrix4.multiplyByPointAsVector(transformMatrix, movementVectorLocal, movementVector);
-
-        // Update the aircraft's position
-        const newPosition = new Cesium.Cartesian3();
-        Cesium.Cartesian3.add(aircraftPosition, movementVector, newPosition);
-        const cartographicPosition = Cesium.Cartographic.fromCartesian(newPosition);
-        this.setters.setPosition({
-            lng: Cesium.Math.toDegrees(cartographicPosition.longitude),
-            lat: Cesium.Math.toDegrees(cartographicPosition.latitude),
-            alt: cartographicPosition.height
+        const lat = currentPosition.lat + deltaLatitude,
+            lng = currentPosition.lng + deltaLongitude,
+            alt = currentPosition.alt + deltaAltitude;
+        
+        console.log({
+            // deltaTimeInMS: deltaTime * 1000,
+            // prevLat: currentPosition.lat, prevLng: currentPosition.lng,
+            // curLat: lat, curLng: lng,
+            distanceMoved
         })
-        // debugger
-        // console.log(newPosition);
-        // entity.position = newPosition;
-
-        // await new Promise(r => setTimeout(r, 1000));
-
-        requestAnimationFrame(this.methods.updateAircraft);
+        // console.log("SPEED", calculateSpeed(deltaTime * 1000, currentPosition.lat, currentPosition.lng, lat, lng));
+        await this.setters.setPosition({ lat, lng, alt });
+        // setTimeout(this.methods.updateAircraftPosition, 33)
+        // requestAnimationFrame(this.methods.updateAircraftPosition);
     },
 
     simulateFlight() {
