@@ -8,6 +8,7 @@ import { useSpiccatoState } from "spiccato-react";
 import {Viewer} from "cesium";
 import MapContainer from "./components/MapContainer";
 import ControlsContainer from "./components/controls/ControlsContainer";
+import OverlayHUD from "./components/OverlayHUD";
 
 function App() {
   const {state} = useSpiccatoState(mainManager, [mainPaths.name]);
@@ -33,7 +34,8 @@ function App() {
   return (
     <div className="container">
       <MapContainer />
-      <ControlsContainer />
+      <OverlayHUD />
+      {/* <ControlsContainer /> */}
     </div>
   );
 }

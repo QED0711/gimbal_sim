@@ -7,7 +7,7 @@ const stateSchema = {
     position: {lng: -77.229176, lat: 38.864188, alt: 15 },
     entity: null,
 
-    aircraft: {pitch: 0, heading: 270, velocity: 100},
+    aircraft: {pitch: 0, heading: 0, velocity: 50},
     velocity: 50, 
 }
 

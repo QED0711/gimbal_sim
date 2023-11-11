@@ -21,6 +21,9 @@ export default function ControlsContainer() {
                 <button onClick={() => { mainManager.methods.adjustPitch(-1) }}>Down</button>
                 <div></div>
             </div>
+
+            <input type="number" value={state.aircraft.pitch} onChange={e => mainManager.setters.setAircraft_pitch(parseInt(e.target.value))} />
+            <input type="number" value={state.aircraft.heading} min={0} max={359} onChange={e => mainManager.setters.setAircraft_heading(parseInt(e.target.value))} />
         </div>
     );
 }

@@ -7,7 +7,8 @@ function logCallRate() {
     const now = Date.now();
     callCount++;
 
-    if (now - lastLogTime >= 1000) { // Check if one second has passed
+    if (now - lastLogTime >= 1000) {
+        // Check if one second has passed
         console.log(`Function called ${callCount} times in the last second.`);
         callCount = 0; // Reset the counter
         lastLogTime = now; // Update the last log time
@@ -16,8 +17,8 @@ function logCallRate() {
 
 function calculateSpeed(deltaTimeMs, prevLat, prevLng, curLat, curLng) {
     // Check if Cesium is loaded
-    if (typeof Cesium === 'undefined') {
-        console.error('Cesium is not loaded');
+    if (typeof Cesium === "undefined") {
+        console.error("Cesium is not loaded");
         return;
     }
 
@@ -40,46 +41,32 @@ function calculateSpeed(deltaTimeMs, prevLat, prevLng, curLat, curLng) {
     return speed;
 }
 
-
 const methods = {
     async updateAircraftPosition() {
-        // logCallRate();
         if (!this.state.map || this.state.isPaused || !this.state.entity) return;
         const now = Date.now();
         const deltaTime = (now - (window._lastPositionUpdate ?? now - 33)) / 1000;
-        // const deltaTime = 1 
-        // if(deltaTime === 0) return requestAnimationFrame(this.methods.updateAircraftPosition);
-        // console.log(deltaTime)
-        window._lastPositionUpdate = Date.now() 
+        window._lastPositionUpdate = Date.now();
         const { aircraft: av, position: currentPosition } = this.state;
-
 
         const headingRadians = Cesium.Math.toRadians(av.heading);
         const pitchRadians = Cesium.Math.toRadians(av.pitch);
 
         const distanceMoved = av.velocity * deltaTime;
+
         const deltaAltitude = distanceMoved * Math.sin(pitchRadians);
         const horizontalDistance = distanceMoved * Math.cos(pitchRadians);
-
         const earthRadius = Cesium.Ellipsoid.WGS84.maximumRadius;
-        const deltaLatitude = (horizontalDistance / earthRadius) * Math.cos(headingRadians);
-        const deltaLongitude =
-            (horizontalDistance / (earthRadius * Math.cos(currentPosition.lat))) * Math.sin(headingRadians);
+        const deltaLatitude = Cesium.Math.toDegrees((horizontalDistance / earthRadius) * Math.cos(headingRadians));
+        const deltaLongitude = Cesium.Math.toDegrees(
+            (horizontalDistance / (earthRadius * Math.cos(currentPosition.lat))) * Math.sin(headingRadians)
+        );
 
         const lat = currentPosition.lat + deltaLatitude,
             lng = currentPosition.lng + deltaLongitude,
             alt = currentPosition.alt + deltaAltitude;
-        
-        console.log({
-            // deltaTimeInMS: deltaTime * 1000,
-            // prevLat: currentPosition.lat, prevLng: currentPosition.lng,
-            // curLat: lat, curLng: lng,
-            distanceMoved
-        })
-        // console.log("SPEED", calculateSpeed(deltaTime * 1000, currentPosition.lat, currentPosition.lng, lat, lng));
+
         await this.setters.setPosition({ lat, lng, alt });
-        // setTimeout(this.methods.updateAircraftPosition, 33)
-        // requestAnimationFrame(this.methods.updateAircraftPosition);
     },
 
     simulateFlight() {
