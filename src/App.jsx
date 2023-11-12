@@ -35,7 +35,7 @@ function App() {
     <div className="container">
       <MapContainer />
       <OverlayHUD />
-      {/* <ControlsContainer /> */}
+      <ControlsContainer />
     </div>
   );
 }

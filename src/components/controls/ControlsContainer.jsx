@@ -8,7 +8,7 @@ export default function ControlsContainer() {
     useKeyboardShortcuts();
     return (
         <div className="fixed top-4 left-4">
-            <button onClick={mainManager.setters.togglePause}>Play/Pause</button>
+            {/* <button onClick={mainManager.setters.togglePause}>Play/Pause</button>
             <input type="number" value={state.aircraft.velocity} onChange={e => mainManager.setters.setAircraft_velocity(parseInt(e.target.value))} />
             <div className="grid grid-cols-3 grid-rows-3">
                 <div></div>
@@ -23,7 +23,7 @@ export default function ControlsContainer() {
             </div>
 
             <input type="number" value={state.aircraft.pitch} onChange={e => mainManager.setters.setAircraft_pitch(parseInt(e.target.value))} />
-            <input type="number" value={state.aircraft.heading} min={0} max={359} onChange={e => mainManager.setters.setAircraft_heading(parseInt(e.target.value))} />
+            <input type="number" value={state.aircraft.heading} min={0} max={359} onChange={e => mainManager.setters.setAircraft_heading(parseInt(e.target.value))} /> */}
         </div>
     );
 }
