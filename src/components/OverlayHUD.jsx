@@ -32,6 +32,7 @@ const useUpdatePosition = (canvasRef, position, aircraft, gimbal) => {
 
         ctx.fillText(`GIMBAL PITCH: ${gimbal.pitch.toFixed(2)}°`, 10, 200) 
         ctx.fillText(`GIMBAL HEADING: ${gimbal.heading.toFixed(2)}°`, 10, 225) 
+        ctx.fillText(`GIMBAL ZOOM: ${gimbal.range.toFixed(2)}°`, 10, 250) 
         
     }, [position, aircraft]) 
 }

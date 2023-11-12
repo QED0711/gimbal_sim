@@ -57,6 +57,17 @@ const setters = {
         });
     },
 
+    adjustGimbalRange(amount = 10) {
+        this.setState(prevState => {
+            return [
+                {gimbal: {...prevState.gimbal, range: prevState.gimbal.range + amount}},
+                [mainPaths.gimbal.range]
+            ]
+        }, () => {
+            this.methods.updateCamera();
+        })
+    },
+
     increaseAircraftPitch(amount = 1) {
         this.setState((prevState) => [
             { aircraft: { ...prevState.aircraft, pitch: Math.min(prevState.aircraft.pitch + amount, 90) } },

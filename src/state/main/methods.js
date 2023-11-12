@@ -69,15 +69,25 @@ const methods = {
         this.setters.setPosition({ lat, lng, alt });
     },
 
-    updateCamera(){
-        if(!!this.state.map){
+    updateCamera() {
+        if (!!this.state.map) {
             const gimbal = this.state.gimbal;
-            const heading = Cesium.Math.toRadians(gimbal.heading);
-            const pitch = Cesium.Math.toRadians(gimbal.pitch);
-            this.state.map.camera.lookAt(this.state.entity.position.getValue(), new Cesium.HeadingPitchRange(heading, pitch, gimbal.range));
+            let heading = Cesium.Math.toRadians(gimbal.heading);
+            let pitch = Cesium.Math.toRadians(gimbal.pitch);
+            let range = gimbal.range;
+
+            // If range is negative, flip the view by adding 180 degrees (π radians) to the heading
+            if (range < 0) {
+                heading += Math.PI; // Flip the view by 180 degrees
+                range = -range; // Make the range positive
+            }
+            
+            this.state.map.camera.lookAt(
+                this.state.entity.position.getValue(),
+                new Cesium.HeadingPitchRange(heading, pitch, range)
+            );
         }
     },
-
 };
 
 export default methods;

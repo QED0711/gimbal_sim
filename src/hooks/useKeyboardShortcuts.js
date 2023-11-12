@@ -3,7 +3,7 @@ import mainManager from "../state/main/mainManager";
 
 export default function useKeyboardShortcuts() {
     useEffect(() => {
-        const actions = {
+        const keyboardActions = {
             ArrowUp(e) {
                 e.shiftKey
                     ? mainManager.setters.increaseAircraftPitch(1)
@@ -24,10 +24,21 @@ export default function useKeyboardShortcuts() {
                     ? mainManager.setters.increaseAircraftHeading(e.ctrlKey ? 0.1 : 1)
                     : mainManager.setters.increaseGimbalHeading(e.ctrlKey ? 0.1 : 1);
             },
+            z(e){
+                e.shiftKey
+                    ? mainManager.setters.adjustGimbalRange(100)
+                    : mainManager.setters.adjustGimbalRange(-100)
+            }
         };
 
+
         window.addEventListener("keydown", function (e) {
-            actions[e.key]?.(e);
+            keyboardActions[e.key]?.(e);
         });
+        window.addEventListener("wheel", function(e) {
+            e.deltaY > 0
+                ? mainManager.setters.adjustGimbalRange(-100)
+                : mainManager.setters.adjustGimbalRange(100)
+        })
     }, []);
 }
