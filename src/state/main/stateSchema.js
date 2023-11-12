@@ -8,7 +8,7 @@ const stateSchema = {
     entity: null,
 
     aircraft: {pitch: 0, heading: 0, velocity: 100},
-    velocity: 50, 
+    gimbal: {pitch: 0, heading: 0, range: 0.1},
 }
 
 export default stateSchema;

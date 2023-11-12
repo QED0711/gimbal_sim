@@ -16,7 +16,7 @@ const useScaleCanvas = (canvasRef) => {
     }, [])
 }
 
-const useUpdatePosition = (canvasRef, position, aircraft) => {
+const useUpdatePosition = (canvasRef, position, aircraft, gimbal) => {
     useLayoutEffect(() => {
         const ctx = canvasRef.current.getContext("2d");
 
@@ -29,15 +29,19 @@ const useUpdatePosition = (canvasRef, position, aircraft) => {
 
         ctx.fillText(`PITCH: ${aircraft.pitch}°`, 10, 125) 
         ctx.fillText(`HEADING: ${aircraft.heading}°`, 10, 150) 
+
+        ctx.fillText(`GIMBAL PITCH: ${gimbal.pitch.toFixed(2)}°`, 10, 200) 
+        ctx.fillText(`GIMBAL HEADING: ${gimbal.heading.toFixed(2)}°`, 10, 225) 
+        
     }, [position, aircraft]) 
 }
 
 export default function OverlayHUD(){
-    const {state} = useSpiccatoState(mainManager, [mainPaths.position, mainPaths.aircraft]);
+    const {state} = useSpiccatoState(mainManager, [mainPaths.position, mainPaths.aircraft, mainPaths.gimbal]);
     const canvasRef = useRef(null);
 
     useScaleCanvas(canvasRef);
-    useUpdatePosition(canvasRef, state.position, state.aircraft);
+    useUpdatePosition(canvasRef, state.position, state.aircraft, state.gimbal);
     return (
         <canvas ref={canvasRef} className="fixed top-0 left-0 bg-transparent" ></canvas>
     )
