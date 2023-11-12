@@ -74,18 +74,15 @@ const methods = {
             const gimbal = this.state.gimbal;
             let heading = Cesium.Math.toRadians(gimbal.heading);
             let pitch = Cesium.Math.toRadians(gimbal.pitch);
-            let range = gimbal.range;
-
-            // If range is negative, flip the view by adding 180 degrees (π radians) to the heading
-            if (range < 0) {
-                heading += Math.PI; // Flip the view by 180 degrees
-                range = -range; // Make the range positive
-            }
-            
+            console.log(gimbal) 
             this.state.map.camera.lookAt(
                 this.state.entity.position.getValue(),
-                new Cesium.HeadingPitchRange(heading, pitch, range)
+                new Cesium.HeadingPitchRange(heading, pitch, gimbal.range)
             );
+            this.state.map.camera.zoomIn(gimbal.zoomAmount)
+            // gimbal.zoomAmount  < 0
+            //     ? this.state.map.camera.zoomIn(-gimbal.zoomAmount)
+            //     : this.state.map.camera.zoomOut(gimbal.zoomAmount)
         }
     },
 };

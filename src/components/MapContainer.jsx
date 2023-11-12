@@ -50,7 +50,7 @@ export default function MapContainer() {
                 // position: Cesium.Cartesian3.fromDegrees(state.startPosition.lng, state.startPosition.lat, state.startPosition.alt),
                 ellipsoid: {
                     radii: new Cesium.Cartesian3(10.0, 10.0, 10.0),
-                    material: Cesium.Color.RED.withAlpha(0.75)
+                    material: Cesium.Color.RED.withAlpha(0.00)
                 }
             })
             mainManager.setters.setEntity(aircraftEntity);

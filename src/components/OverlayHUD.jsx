@@ -16,11 +16,41 @@ const useScaleCanvas = (canvasRef) => {
     }, [])
 }
 
+const useDrawCenterReticule = (canvasRef) => {
+    useLayoutEffect(() => {
+        const ctx = canvasRef.current.getContext("2d");
+        const center = {x: window.innerWidth / 2, y: window.innerHeight / 2};
+
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "cyan";
+
+        ctx.beginPath();
+        ctx.moveTo(center.x, center.y - 10);
+        ctx.lineTo(center.x, center.y - 40);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(center.x + 10, center.y);
+        ctx.lineTo(center.x + 40, center.y);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(center.x, center.y + 10);
+        ctx.lineTo(center.x, center.y + 40);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(center.x - 10, center.y);
+        ctx.lineTo(center.x - 40, center.y);
+        ctx.stroke();
+
+    }, [])
+}
 const useUpdatePosition = (canvasRef, position, aircraft, gimbal) => {
     useLayoutEffect(() => {
         const ctx = canvasRef.current.getContext("2d");
 
-        ctx.clearRect(0, 0, window.innerWidth / 2, window.innerHeight / 2)
+        ctx.clearRect(0, 0, window.innerWidth / 2 - 16, window.innerHeight / 2 - 16)
         ctx.font = "24px Arial";
         ctx.fillStyle = "cyan"
         ctx.fillText(`LNG: ${position.lng.toFixed(5)}`, 10, 25) 
@@ -42,8 +72,9 @@ export default function OverlayHUD(){
     const canvasRef = useRef(null);
 
     useScaleCanvas(canvasRef);
+    useDrawCenterReticule(canvasRef);
     useUpdatePosition(canvasRef, state.position, state.aircraft, state.gimbal);
     return (
-        <canvas ref={canvasRef} className="fixed top-0 left-0 bg-transparent" ></canvas>
+        <canvas ref={canvasRef} className="fixed top-0 left-0 bg-transparent"></canvas>
     )
 }

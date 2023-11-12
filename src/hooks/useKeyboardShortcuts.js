@@ -24,21 +24,19 @@ export default function useKeyboardShortcuts() {
                     ? mainManager.setters.increaseAircraftHeading(e.ctrlKey ? 0.1 : 1)
                     : mainManager.setters.increaseGimbalHeading(e.ctrlKey ? 0.1 : 1);
             },
-            z(e){
-                e.shiftKey
-                    ? mainManager.setters.adjustGimbalRange(100)
-                    : mainManager.setters.adjustGimbalRange(-100)
-            }
+            "=": function (e) {
+                mainManager.setters.adjustGimbalZoom(-500);
+            },
+            "-": function (e) {
+                mainManager.setters.adjustGimbalZoom(500);
+            },
         };
-
 
         window.addEventListener("keydown", function (e) {
             keyboardActions[e.key]?.(e);
         });
-        window.addEventListener("wheel", function(e) {
-            e.deltaY > 0
-                ? mainManager.setters.adjustGimbalRange(-100)
-                : mainManager.setters.adjustGimbalRange(100)
-        })
+        window.addEventListener("wheel", function (e) {
+            e.deltaY > 0 ? mainManager.setters.adjustGimbalZoom(500) : mainManager.setters.adjustGimbalZoom(-500);
+        });
     }, []);
 }

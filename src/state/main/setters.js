@@ -57,11 +57,11 @@ const setters = {
         });
     },
 
-    adjustGimbalRange(amount = 10) {
+    adjustGimbalZoom(amount=100){
         this.setState(prevState => {
             return [
-                {gimbal: {...prevState.gimbal, range: prevState.gimbal.range + amount}},
-                [mainPaths.gimbal.range]
+                {gimbal: {...prevState.gimbal, zoomAmount: Math.max(prevState.gimbal.zoomAmount - amount, 0)}},
+                [mainPaths.gimbal.zoomAmount]
             ]
         }, () => {
             this.methods.updateCamera();
