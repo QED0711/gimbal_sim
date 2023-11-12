@@ -96,6 +96,25 @@ const setters = {
             return [{ aircraft: { ...prevState.aircraft, heading } }, [mainPaths.aircraft.heading]];
         });
     },
+
+    increaseAircraftVelocity(amount = 1) {
+        this.setState(prevState => {
+            return [
+                {aircraft: {...prevState.aircraft, velocity: prevState.aircraft.velocity + amount}},
+                [mainPaths.aircraft.velocity]
+            ]
+        })
+    },
+
+    decreaseAircraftVelocity(amount = 1) {
+        this.setState(prevState => {
+            return [
+                {aircraft: {...prevState.aircraft, velocity: Math.max(prevState.aircraft.velocity - amount, 0)}},
+                [mainPaths.aircraft.velocity]
+            ]
+        })
+    },
+
 };
 
 export default setters;

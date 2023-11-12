@@ -6,30 +6,45 @@ export default function useKeyboardShortcuts() {
         const keyboardActions = {
             ArrowUp(e) {
                 e.shiftKey
-                    ? mainManager.setters.increaseAircraftPitch(1)
+                    ? mainManager.setters.adjustGimbalZoom(-500) 
                     : mainManager.setters.increaseGimbalPitch(e.ctrlKey ? 0.1 : 1);
             },
             ArrowDown(e) {
                 e.shiftKey
-                    ? mainManager.setters.decreaseAircraftPitch(1)
+                    ? mainManager.setters.adjustGimbalZoom(500)
                     : mainManager.setters.decreaseGimbalPitch(e.ctrlKey ? 0.1 : 1);
             },
             ArrowLeft(e) {
-                e.shiftKey
-                    ? mainManager.setters.decreaseAircraftHeading(e.ctrlKey ? 0.1 : 1)
-                    : mainManager.setters.decreaseGimbalHeading(e.ctrlKey ? 0.1 : 1);
+                mainManager.setters.decreaseGimbalHeading(e.ctrlKey ? 0.1 : 1);
             },
             ArrowRight(e) {
-                e.shiftKey
-                    ? mainManager.setters.increaseAircraftHeading(e.ctrlKey ? 0.1 : 1)
-                    : mainManager.setters.increaseGimbalHeading(e.ctrlKey ? 0.1 : 1);
+                mainManager.setters.increaseGimbalHeading(e.ctrlKey ? 0.1 : 1);
             },
-            "=": function (e) {
-                mainManager.setters.adjustGimbalZoom(-500);
+
+            a(e) {
+                mainManager.setters.decreaseAircraftHeading(e.ctrlKey ? 0.1 : 1);
             },
-            "-": function (e) {
-                mainManager.setters.adjustGimbalZoom(500);
+
+            d(e) {
+                mainManager.setters.increaseAircraftHeading(e.ctrlKey ? 0.1 : 1);
             },
+
+            w(e) {
+                mainManager.setters.increaseAircraftPitch(1);
+            },
+
+            s(e) {
+                mainManager.setters.decreaseAircraftPitch(1);
+            },
+
+            "=": () => {
+                mainManager.setters.increaseAircraftVelocity(1 / 2.237)
+            },
+
+            "-": () => {
+                mainManager.setters.decreaseAircraftVelocity(1 / 2.237)
+            },
+
         };
 
         window.addEventListener("keydown", function (e) {

@@ -74,7 +74,7 @@ const methods = {
             const gimbal = this.state.gimbal;
             let heading = Cesium.Math.toRadians(gimbal.heading);
             let pitch = Cesium.Math.toRadians(gimbal.pitch);
-            console.log(gimbal) 
+            
             this.state.map.camera.lookAt(
                 this.state.entity.position.getValue(),
                 new Cesium.HeadingPitchRange(heading, pitch, gimbal.range)
@@ -85,6 +85,8 @@ const methods = {
             //     : this.state.map.camera.zoomOut(gimbal.zoomAmount)
         }
     },
+
+
 };
 
 export default methods;

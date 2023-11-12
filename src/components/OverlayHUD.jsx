@@ -55,14 +55,20 @@ const useUpdatePosition = (canvasRef, position, aircraft, gimbal) => {
         ctx.fillStyle = "cyan"
         ctx.fillText(`LNG: ${position.lng.toFixed(5)}`, 10, 25) 
         ctx.fillText(`LAT: ${position.lat.toFixed(5)}`, 10, 50) 
-        ctx.fillText(`ALT: ${position.alt.toFixed(5)}`, 10, 75) 
+        ctx.fillText(`ALT: ${position.alt.toFixed(2)} meters`, 10, 75) 
 
         ctx.fillText(`PITCH: ${aircraft.pitch}°`, 10, 125) 
         ctx.fillText(`HEADING: ${aircraft.heading}°`, 10, 150) 
+        ctx.fillText(`SPEED: ${(aircraft.velocity * 2.237).toFixed(2)} mph`, 10, 175) 
 
         ctx.fillText(`GIMBAL PITCH: ${gimbal.pitch.toFixed(2)}°`, 10, 200) 
         ctx.fillText(`GIMBAL HEADING: ${gimbal.heading.toFixed(2)}°`, 10, 225) 
         ctx.fillText(`GIMBAL ZOOM: ${gimbal.range.toFixed(2)}°`, 10, 250) 
+        
+        const centerCoord = mainManager.getters.getCoordinateAtPixel({});
+        ctx.fillText(`TGT LNG: ${centerCoord?.lng?.toFixed?.(5) ?? "--"}°`, 10, 300) 
+        ctx.fillText(`TGT LAT: ${centerCoord?.lat?.toFixed?.(5) ?? "--"}°`, 10, 325) 
+        // ctx.fillText(`TGT LAT: ${gimbal.range.toFixed(2)}°`, 10, 250) 
         
     }, [position, aircraft]) 
 }
