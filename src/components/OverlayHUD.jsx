@@ -68,6 +68,7 @@ const useUpdatePosition = (canvasRef, position, aircraft, gimbal) => {
         const centerCoord = mainManager.getters.getCoordinateAtPixel({});
         ctx.fillText(`TGT LNG: ${centerCoord?.lng?.toFixed?.(5) ?? "--"}°`, 10, 300) 
         ctx.fillText(`TGT LAT: ${centerCoord?.lat?.toFixed?.(5) ?? "--"}°`, 10, 325) 
+        ctx.fillText(`TGT LAT: ${centerCoord?.alt?.toFixed?.(2) ?? "--"} meters`, 10, 350) 
         // ctx.fillText(`TGT LAT: ${gimbal.range.toFixed(2)}°`, 10, 250) 
         
     }, [position, aircraft]) 

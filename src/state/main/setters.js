@@ -1,3 +1,4 @@
+import * as Cesium from 'cesium'
 import { mainPaths } from "./mainManager";
 
 const setters = {
@@ -5,6 +6,32 @@ const setters = {
         this.setState((prevState) => {
             return [{ isPaused: !prevState.isPaused }, [mainPaths.isPaused]];
         });
+    },
+
+    toggleGimbalLock(){
+        this.setState(prevState => {
+            return [
+                {gimbal: {...prevState.gimbal, isLocked: !prevState.gimbal.isLocked}},
+                [mainPaths.gimbal.isLocked]
+            ]
+        }, async state => {
+            if(state.gimbal.isLocked){
+                await new Promise(r => setTimeout(r, 100)); // wait for the camera to lock to its new orientation before updating heading/pitch
+                this.setters.setGimbalHeadingPitch();
+            }
+        })
+    },
+
+    setGimbalHeadingPitch(heading, pitch){
+        this.setState(prevState => {
+            const camera = this.state.map.camera;
+            heading ??= Cesium.Math.toDegrees(camera.heading);
+            pitch ??= Cesium.Math.toDegrees(camera.pitch);
+            return [
+                {gimbal: {...prevState.gimbal, heading, pitch}},
+                [mainPaths.gimbal.heading, mainPaths.gimbal.pitch]
+            ]
+        })
     },
 
     increaseGimbalPitch(amount = 1) {

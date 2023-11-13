@@ -10,7 +10,8 @@ const stateSchema = {
     aircraft: {
         pitch: 0, 
         heading: 0, 
-        velocity: 87.17031738936095 // equal to 195 mph
+        // velocity: 87.17031738936095 // equal to 195 mph
+        velocity: 0
     },
     gimbal: {
         pitch: 0, 
@@ -18,7 +19,7 @@ const stateSchema = {
         range: 0.01, 
         zoomAmount: 0,
         isLocked: false,
-        lockPoint: {lat: 0.0, lng: 0.0}
+        target: {lat: 38.93911, lng: -77.44456, alt: 0.00}
 
     },
 }

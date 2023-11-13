@@ -21,6 +21,10 @@ export default function useKeyboardShortcuts() {
                 mainManager.setters.increaseGimbalHeading(e.ctrlKey ? 0.1 : 1);
             },
 
+            l(){
+                mainManager.setters.toggleGimbalLock();
+            },
+
             a(e) {
                 mainManager.setters.decreaseAircraftHeading(e.ctrlKey ? 0.1 : 1);
             },
