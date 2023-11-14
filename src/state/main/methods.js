@@ -73,16 +73,9 @@ const methods = {
             const heading = calcHeading({lat, lng, alt}, this.state.gimbal.target);
             const pitch = calcPitch({lat, lng, alt}, this.state.gimbal.target);
 
-            this.setState(prevState => {
-                return [
-                    {gimbal: {...prevState.gimbal, heading, pitch}},
-                    [this.paths.gimbal.heading, this.paths.gimbal.pitch]
-                ]
-            }, () => {this.methods.updateCamera()})
-
+            this.setters.setGimbalHeadingPitch(heading, pitch);
         }
 
-        if (this.state.gimbal.isLocked) this.methods.updateCamera();
     },
 
     updateCamera() {
@@ -93,39 +86,6 @@ const methods = {
             let heading, pitch;
                 heading = Cesium.Math.toRadians(gimbal.heading);
                 pitch = Cesium.Math.toRadians(gimbal.pitch);
-
-            // if (gimbal.isLocked) {
-            //     const cameraPosition = camera.positionWC;
-            //     const targetPosition = Cesium.Cartesian3.fromDegrees(
-            //         gimbal.target.lng,
-            //         gimbal.target.lat,
-            //         gimbal.target.alt
-            //     );
-            //     // const direction = Cesium.Cartesian3.subtract(targetPosition, cameraPosition, new Cesium.Cartesian3());
-            //     const direction = Cesium.Cartesian3.subtract(cameraPosition, targetPosition, new Cesium.Cartesian3());
-            //     Cesium.Cartesian3.normalize(direction, direction);
-
-            //     const heading = calcHeading(this.state.position, this.state.gimbal.target);
-            //     console.log(heading);
-
-            //     const north = new Cesium.Cartesian3(0, 1, 0); // North direction
-            //     const east = new Cesium.Cartesian3(1, 0, 0); // East direction
-            //     const projectedDirection = new Cesium.Cartesian3(direction.x, direction.y, 0);
-            //     Cesium.Cartesian3.normalize(projectedDirection, projectedDirection);
-
-            //     // heading = Math.acos(Cesium.Cartesian3.dot(north, projectedDirection));
-            //     // if (Cesium.Cartesian3.dot(east, projectedDirection) < 0) {
-            //     //     heading = Cesium.Math.TWO_PI - heading;
-            //     // }
-            //     // heading = Cesium.Math.convertLongitudeRange(heading); // Normalize heading
-
-            //     // heading = Math.atan2(direction.y, direction.x) - Cesium.Math.PI_OVER_TWO;
-            //     pitch = Math.asin(direction.z);
-            //     // console.log(Cesium.Math.toDegrees(heading), Cesium.Math.toDegrees(pitch));
-            // } else {
-            //     heading = Cesium.Math.toRadians(gimbal.heading);
-            //     pitch = Cesium.Math.toRadians(gimbal.pitch);
-            // }
 
             camera.lookAt(
                 this.state.entity.position.getValue(),

@@ -20,10 +20,12 @@ export function calcPitch(coord1, coord2) {
     var cartographic2 = Cesium.Cartographic.fromDegrees(coord2.lng, coord2.lat, coord2.alt);
 
     // Calculate the surface distance between the two points
-    var surfaceDistance = Cesium.Cartesian3.distance(
-        Cesium.Cartesian3.fromRadians(cartographic1.longitude, cartographic1.latitude, cartographic1.height),
-        Cesium.Cartesian3.fromRadians(cartographic2.longitude, cartographic2.latitude, cartographic2.height)
-    );
+    const geodesic = new Cesium.EllipsoidGeodesic(cartographic1, cartographic2);
+    const surfaceDistance = geodesic.surfaceDistance;
+    // var surfaceDistance = Cesium.Cartesian3.distance(
+    //     Cesium.Cartesian3.fromRadians(cartographic1.longitude, cartographic1.latitude, cartographic1.height),
+    //     Cesium.Cartesian3.fromRadians(cartographic2.longitude, cartographic2.latitude, cartographic2.height)
+    // );
 
     // Calculate the elevation difference
     var elevationDifference = cartographic2.height - cartographic1.height;

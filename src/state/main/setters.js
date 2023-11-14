@@ -26,6 +26,16 @@ const setters = {
         })
     },
 
+    setTargetToCenterScreen(){
+        this.setState(prevState => {
+            const centerCoord = this.getters.getCoordinateAtPixel({});
+            return [
+                {gimbal: {...prevState.gimbal, target: centerCoord}},
+                [this.paths.gimbal.target]
+            ]
+        })
+    },
+
     setGimbalHeadingPitch(heading, pitch){
         this.setState(prevState => {
             const camera = this.state.map.camera;
@@ -35,6 +45,8 @@ const setters = {
                 {gimbal: {...prevState.gimbal, heading, pitch}},
                 [mainPaths.gimbal.heading, mainPaths.gimbal.pitch]
             ]
+        }, () => {
+            this.methods.updateCamera();
         })
     },
 
@@ -47,6 +59,7 @@ const setters = {
                 ];
             },
             () => {
+                if(this.state.gimbal.isLocked) this.setters.setTargetToCenterScreen();
                 this.methods.updateCamera();
             }
         );
@@ -61,6 +74,7 @@ const setters = {
                 ];
             },
             () => {
+                if(this.state.gimbal.isLocked) this.setters.setTargetToCenterScreen();
                 this.methods.updateCamera();
             }
         );
