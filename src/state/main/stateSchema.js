@@ -10,8 +10,8 @@ const stateSchema = {
     aircraft: {
         pitch: 0, 
         heading: 0, 
-        // velocity: 87.17031738936095 // equal to 195 mph
-        velocity: 0
+        velocity: 87.17031738936095 // equal to 195 mph
+        // velocity: 0
     },
     gimbal: {
         pitch: 0, 

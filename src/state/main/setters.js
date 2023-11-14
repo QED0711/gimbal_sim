@@ -10,14 +10,18 @@ const setters = {
 
     toggleGimbalLock(){
         this.setState(prevState => {
-            return [
-                {gimbal: {...prevState.gimbal, isLocked: !prevState.gimbal.isLocked}},
-                [mainPaths.gimbal.isLocked]
-            ]
-        }, async state => {
-            if(state.gimbal.isLocked){
-                await new Promise(r => setTimeout(r, 100)); // wait for the camera to lock to its new orientation before updating heading/pitch
-                this.setters.setGimbalHeadingPitch();
+            const isLocked = !prevState.gimbal.isLocked;
+            if(isLocked) {
+                const centerCoord = this.getters.getCoordinateAtPixel({});
+                return [
+                    {gimbal: {...prevState.gimbal, isLocked, target: centerCoord}},
+                    [this.paths.gimbal.isLocked, this.paths.gimbal.target]
+                ]
+            } else {
+                return [
+                    {gimbal: {...prevState.gimbal, isLocked}},
+                    [mainPaths.gimbal.isLocked]
+                ]
             }
         })
     },
