@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/tauri";
 import * as Cesium from "cesium";
 import { useEffect } from "react";
 import { useSpiccatoState } from "spiccato-react";
@@ -73,6 +74,13 @@ export default function MapContainer() {
             // mainManager.methods.updateAircraftPosition();
         }
     }, [state.isPaused, state.map]);
+
+    useEffect(() => {
+        // setInterval(mainManager.methods.sendImage, 33)
+        setInterval(() => {
+            invoke("say_something_else", {s: "test"}, 1000)
+        })
+    }, [])
 
     return <div id="map" className="w-screen h-screen"></div>;
 }

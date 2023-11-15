@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api";
 import * as Cesium from "cesium";
 import { calcHeading, calcPitch } from "../../utils/map";
 
@@ -94,6 +95,21 @@ const methods = {
             camera.zoomIn(gimbal.zoomAmount);
         }
     },
+
+    sendImage(){
+        if(!this.state.map) return;
+
+        this.state.map.canvas.toBlob(blob => {
+            // console.log(blob)
+            const reader = new FileReader();
+            reader.onload = function(){
+                const arrayBuffer = reader.result;
+                const data = new Uint8Array(arrayBuffer);
+                invoke("receive_image", {image_arr: data});
+            }
+            reader.readAsArrayBuffer(blob);
+        }, "image/jpeg", 0.9);
+    }
 };
 
 export default methods;

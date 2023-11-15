@@ -9,13 +9,20 @@ fn greet(name: &str) -> String {
 
 #[tauri::command]
 fn say_something_else(s: &str) -> String {
+    println!("{}", s);
     format!("THIS IS FROM TAURI: {}", s)
+}
+
+#[tauri::command]
+fn receive_image(image_arr: Vec<u8>) {
+    println!("{:?}", image_arr);
 }
 
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![greet])
         .invoke_handler(tauri::generate_handler![say_something_else])
+        .invoke_handler(tauri::generate_handler![receive_image])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
