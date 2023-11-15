@@ -5,7 +5,6 @@ import "./App.css";
 import mainManager, { mainPaths } from "./state/main/mainManager";
 import { useSpiccatoState } from "spiccato-react";
 
-import {Viewer} from "cesium";
 import MapContainer from "./components/MapContainer";
 import ControlsContainer from "./components/controls/ControlsContainer";
 import OverlayHUD from "./components/OverlayHUD";
@@ -36,8 +35,12 @@ function App() {
       <MapContainer />
       <OverlayHUD />
       <ControlsContainer />
+      <button className="fixed top-1 right-1 bg-gray-300" onClick={() => {
+        mainManager.methods.sendImage();
+      }}>Send Image</button>
     </div>
   );
 }
+
 
 export default App;

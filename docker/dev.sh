@@ -8,5 +8,6 @@ docker run --rm -ti \
     -e DISPLAY=$DISPLAY \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
     -p 3000:1420 \
+    -e USERNAME=$(whoami) \
     gimbal_simulator:dev \
     bash

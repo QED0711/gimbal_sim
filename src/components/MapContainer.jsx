@@ -12,6 +12,11 @@ export default function MapContainer() {
     useEffect(() => {
         window.CESIUM_BASE_URL = "/cesium";
         const viewer = new Cesium.Viewer("map", {
+            contextOptions: {
+                webgl: {
+                    preserveDrawingBuffer: true,
+                }
+            },
             // imageryProvider: new Cesium.UrlTemplateImageryProvider({url: "https://a.tile.openstreetmap.org/"}),
             imageryProvider: undefined,
             animation: false, // Don't create an animation widget
@@ -76,10 +81,7 @@ export default function MapContainer() {
     }, [state.isPaused, state.map]);
 
     useEffect(() => {
-        // setInterval(mainManager.methods.sendImage, 33)
-        setInterval(() => {
-            invoke("say_something_else", {s: "test"}, 1000)
-        })
+        setInterval(mainManager.methods.sendImage, 33)
     }, [])
 
     return <div id="map" className="w-screen h-screen"></div>;
