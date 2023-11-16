@@ -96,21 +96,19 @@ const methods = {
         }
     },
 
-    sendImage(canvas){
+    sendImage(imageQuality){
         if(!this.state.map) return;
         
         this.state.map.canvas.toBlob(blob => {
-            // const url = URL.createObjectURL(blob)
             const reader = new FileReader();
 
             reader.onload = async function(){
                 const arrayBuffer = reader.result;
                 const data = Array.from(new Uint8Array(arrayBuffer));
                 await invoke("receive_image", {imageArr: data});
-                // URL.revokeObjectURL(url);
             }
             reader.readAsArrayBuffer(blob);
-        }, "image/jpeg", 0.9);
+        }, "image/jpeg", imageQuality);
     }
 };
 

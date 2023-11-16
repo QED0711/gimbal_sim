@@ -2,7 +2,7 @@
 
 xhost + 
 
-docker run --rm -ti \
+docker run --rm -ti --network host \
     --name gimbal_sim_dev \
     -v $PWD/:/home/$(whoami)/app/ \
     -e DISPLAY=$DISPLAY \

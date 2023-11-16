@@ -35,9 +35,6 @@ function App() {
       <MapContainer />
       <OverlayHUD />
       <ControlsContainer />
-      <button className="fixed top-1 right-1 bg-gray-300" onClick={() => {
-        mainManager.methods.sendImage();
-      }}>Send Image</button>
     </div>
   );
 }
