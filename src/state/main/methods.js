@@ -105,7 +105,7 @@ const methods = {
             reader.onload = async function(){
                 const arrayBuffer = reader.result;
                 const data = Array.from(new Uint8Array(arrayBuffer));
-                await invoke("receive_image", {imageArr: data});
+                await invoke("send_packet", {imageArr: data});
             }
             reader.readAsArrayBuffer(blob);
         }, "image/jpeg", imageQuality);
