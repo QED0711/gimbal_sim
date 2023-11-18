@@ -50,7 +50,7 @@ const useUpdatePosition = (canvasRef, position, aircraft, gimbal) => {
     useLayoutEffect(() => {
         const ctx = canvasRef.current.getContext("2d");
 
-        ctx.clearRect(0, 0, window.innerWidth / 2 - 16, window.innerHeight / 2 - 16)
+        ctx.clearRect(0, 0, window.innerWidth / 2 - 50, window.innerHeight)
         ctx.font = "24px Arial";
         ctx.fillStyle = "cyan"
         ctx.fillText(`LNG: ${position.lng.toFixed(5)}`, 10, 25) 

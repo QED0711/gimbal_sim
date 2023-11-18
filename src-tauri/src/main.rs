@@ -6,10 +6,10 @@ use tauri::State;
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
 struct AppSharedState {
-    // video_stdin: Mutex<Option<std::process::ChildStdin>>,
+    video_stdin: Mutex<Option<std::process::ChildStdin>>,
     // data_stdin: Mutex<Option<std::process::ChildStdin>>,
-    video_socket: UdpSocket,
-    video_target: String,
+    // video_socket: UdpSocket,
+    // video_target: String,
 }
 
 #[allow(dead_code)]
@@ -23,24 +23,37 @@ fn save_image_to_disk(data: Vec<u8>){
 
 #[tauri::command]
 fn send_packet(state: State<AppSharedState>, image_arr: Vec<u8>) {
-    let _ = state.video_socket.send_to(&image_arr, state.video_target.as_str());
+    let mut video_stdin = state.video_stdin.lock().unwrap();
+    if let Some(stdin) = video_stdin.as_mut() {
+        stdin.write_all(&image_arr).expect("Failed to write to video stdin")
+    }
 }
 
 fn main() {
 
-    let video_socket = UdpSocket::bind("0.0.0.0:0").expect("Failed to bind to video socket");
-    let video_target = "239.0.0.2:8888".to_string();
+    let ffmpeg_video = "-f image2pipe -c:v mjpeg -i - -f mpegts udp://239.0.0.2:8888";
+    let ffmpeg_output = "-i udp://239.0.0.2:8888 -c copy -f mpegts udp://239.0.0.1:8000";
 
-    let ffmpeg_command = "-c:v mjpeg -i udp://239.0.0.2:8888 -map 0:v -c copy -f mpegts udp://239.0.0.1:8000";
-
-    let _ = Command::new("ffmpeg")
-        .args(ffmpeg_command.split(" "))
+    let video_handler = Command::new("ffmpeg")
+        .args(ffmpeg_video.split(" "))
+        .stdin(Stdio::piped())
         .spawn()
-        .expect("Failed to start ffmpeg multicast process");
+        .expect("Failed to start ffmpeg video handler");
 
+    let video_stdin = Mutex::new(video_handler.stdin);
+
+
+    // Master Output Stream 
+    let _ = Command::new("ffmpeg")
+        .args(ffmpeg_output.split(" "))
+        .spawn()
+        .expect("Failed to start ffmpeg master output");
+
+
+    let shared_state = AppSharedState{video_stdin};
 
     tauri::Builder::default()
-        .manage(AppSharedState {video_socket, video_target})
+        .manage(shared_state)
         .invoke_handler(tauri::generate_handler![
             send_packet
         ])
