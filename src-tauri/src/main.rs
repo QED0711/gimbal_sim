@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{fs::File, io::Write, path::Path, process::{Command, Stdio}, sync::Mutex, net::UdpSocket};
+use std::{fs::File, io::Write, path::Path, process::{Command, Stdio}, sync::Mutex, net::UdpSocket, thread};
 use tauri::State;
 use rand::Rng;
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
@@ -96,10 +96,17 @@ fn main() {
     // let output_stdin = Mutex::new(output_handler.stdin);
 
     // TODO: create a handler that the front end can call to start the ffmpeg script.
-
+    println!("CREATING PIPES");
     let pipe1 = File::create("/tmp/pipe1").expect("Failed to create pipe1 file handle");
     let pipe2 = File::create("/tmp/pipe2").expect("Failed to create pipe2 file handle");
+    println!("PIPES CREATED");
 
+    // thread::spawn(move || {
+    //     let _ = Command::new("ffmpeg")
+    //         .args(ffmpeg_output.split(" "))
+    //         .spawn()
+    //         .expect("Failed to start ffmpeg relay");
+    // });
 
     let shared_state = AppSharedState{
         // video_stdin, 
