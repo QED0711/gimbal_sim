@@ -72,6 +72,14 @@ fn main() {
     //     .status()
     //     .expect("Failed to create pipe2 FIFO");
 
+    // thread::spawn(move || {
+    //     let _ = Command::new("cat").arg("/tmp/pipe1").stdout(Stdio::null()).spawn().expect("Failed to watch pipe1");
+    //     println!("PIPE1");
+    // });
+    // thread::spawn(move || {
+    //     let _ = Command::new("cat").arg("/tmp/pipe2").stdout(Stdio::null()).spawn().expect("Failed to watch pipe2");
+    //     println!("PIPE1");
+    // });
 
 
     let ffmpeg_video = "-loglevel quiet -f image2pipe -c:v mjpeg -i - -f mpegts udp://239.0.0.2:8888";
@@ -82,7 +90,8 @@ fn main() {
     // let ffmpeg_output = "-thread_queue_size 512 -i udp://239.0.0.2:8888 -thread_queue_size 512 -f data -i udp://239.0.0.3:8889 -map 0 -map 1 -c copy -f mpegts udp://239.0.0.1:8000";
     // let ffmpeg_output = "-thread_queue_size 10000 -i udp://239.0.0.2:8888 -thread_queue_size 10000 -f data -i - -map 0 -map 1 -c copy -f mpegts udp://239.0.0.1:8000";
     // let ffmpeg_output = "-thread_queue_size 10000 -i udp://239.0.0.2:8888 -map 0 -c copy -f mpegts udp://239.0.0.1:8000";
-    let ffmpeg_output = "-thread_queue_size 512 -i /tmp/pipe1 -thread_queue_size 512 -f data -i /tmp/pipe2 -map 0 -map 1 -c copy -f mpegts udp://239.0.0.1:8000";
+    let ffmpeg_output = "-loglevel quiet -c:v mjpeg -i /tmp/pipe1 -f data -i /tmp/pipe2 -map 0 -map 1 -c copy -f mpegts udp://239.0.0.1:8000";
+    // let ffmpeg_output = "-thread_queue_size 512 -f image2pipe -c:v mjpeg -i /tmp/pipe1 -map 0 -f mpegts udp://239.0.0.1:8000";
 
     // let video_handler = Command::new("ffmpeg")
     //     .args(ffmpeg_video.split(" "))
@@ -92,19 +101,20 @@ fn main() {
 
     // let video_stdin = Mutex::new(video_handler.stdin);
 
-    // Master Output Stream 
-    // let output_handler = Command::new("ffmpeg")
-    //     .args(ffmpeg_output.split(" "))
-    //     .stdin(Stdio::piped())
-    //     .spawn()
-    //     .expect("Failed to start ffmpeg master output");
-    // let output_stdin = Mutex::new(output_handler.stdin);
-
     // TODO: create a handler that the front end can call to start the ffmpeg script.
     // println!("CREATING PIPES");
     // let pipe1 = File::create("/tmp/pipe1").expect("Failed to create pipe1 file handle");
     // let pipe2 = File::create("/tmp/pipe2").expect("Failed to create pipe2 file handle");
     // println!("PIPES CREATED");
+
+
+    // Master Output Stream 
+    let output_handler = Command::new("ffmpeg")
+        .args(ffmpeg_output.split(" "))
+        .stdin(Stdio::piped())
+        .spawn()
+        .expect("Failed to start ffmpeg master output");
+    // let output_stdin = Mutex::new(output_handler.stdin);
 
     // thread::spawn(move || {
     //     let _ = Command::new("ffmpeg")
