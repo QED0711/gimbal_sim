@@ -4,6 +4,7 @@
 use std::{fs::File, io::Write, path::Path, process::{Command, Stdio}, sync::Mutex, net::UdpSocket, thread};
 use tauri::State;
 use rand::Rng;
+use gstreamer::prelude::*;
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
 struct AppSharedState {
@@ -15,8 +16,8 @@ struct AppSharedState {
 
     ffmpeg_script: String,
 
-    pipe1: File, 
-    pipe2: File, 
+    // pipe1: File, 
+    // pipe2: File, 
     // data_stdin: Mutex<Option<std::process::ChildStdin>>,
     // video_socket: UdpSocket,
     // video_target: String,
@@ -37,10 +38,10 @@ fn send_packet(state: State<AppSharedState>, image_arr: Vec<u8>) {
     let klv = generate_fake_klv_data(32);
     // let _ = state.klv_socket.send_to(&klv, state.klv_target.as_str());
 
-    let mut pipe1 = &state.pipe1;
-    let mut pipe2 = &state.pipe2;
-    pipe1.write_all(&image_arr).expect("Failed to write to image pipe");
-    pipe2.write_all(&klv).expect("Failed to write to data pipe");
+    // let mut pipe1 = &state.pipe1;
+    // let mut pipe2 = &state.pipe2;
+    // pipe1.write_all(&image_arr).expect("Failed to write to image pipe");
+    // pipe2.write_all(&klv).expect("Failed to write to data pipe");
 
     // let mut video_stdin = state.video_stdin.lock().unwrap();
     // if let Some(stdin) = video_stdin.as_mut() {
@@ -56,16 +57,20 @@ fn send_packet(state: State<AppSharedState>, image_arr: Vec<u8>) {
 
 fn main() {
 
+    gstreamer::init().unwrap();
 
-    Command::new("mkfifo")
-        .arg("/tmp/pipe1")
-        .status()
-        .expect("Failed to create pipe1 FIFO");
+    let pipeline = gstreamer::Pipeline::new();
+    let udpsrc_mjpeg = gstreamer::ElementFactory::make("udpsrc");
 
-    Command::new("mkfifo")
-        .arg("/tmp/pipe2")
-        .status()
-        .expect("Failed to create pipe2 FIFO");
+    // Command::new("mkfifo")
+    //     .arg("/tmp/pipe1")
+    //     .status()
+    //     .expect("Failed to create pipe1 FIFO");
+
+    // Command::new("mkfifo")
+    //     .arg("/tmp/pipe2")
+    //     .status()
+    //     .expect("Failed to create pipe2 FIFO");
 
 
 
@@ -96,10 +101,10 @@ fn main() {
     // let output_stdin = Mutex::new(output_handler.stdin);
 
     // TODO: create a handler that the front end can call to start the ffmpeg script.
-    println!("CREATING PIPES");
-    let pipe1 = File::create("/tmp/pipe1").expect("Failed to create pipe1 file handle");
-    let pipe2 = File::create("/tmp/pipe2").expect("Failed to create pipe2 file handle");
-    println!("PIPES CREATED");
+    // println!("CREATING PIPES");
+    // let pipe1 = File::create("/tmp/pipe1").expect("Failed to create pipe1 file handle");
+    // let pipe2 = File::create("/tmp/pipe2").expect("Failed to create pipe2 file handle");
+    // println!("PIPES CREATED");
 
     // thread::spawn(move || {
     //     let _ = Command::new("ffmpeg")
@@ -114,7 +119,7 @@ fn main() {
         // klv_socket, 
         // klv_target,
         ffmpeg_script: ffmpeg_output.to_string(),
-        pipe1, pipe2
+        // pipe1, pipe2
     };
 
     tauri::Builder::default()
