@@ -11,9 +11,9 @@ export default function MapContainer() {
         mainPaths.startPosition,
         mainPaths.entity,
     ]);
-    const [record, setRecord] = useState(false);
-    const [imageQuality, setImageQuality] = useState(0.5);
-    const [fps, setFps] = useState(30);
+    const [record, setRecord] = useState(true);
+    const [imageQuality, setImageQuality] = useState(0.3);
+    const [fps, setFps] = useState(1);
 
     // EFFECTS
     useEffect(() => {

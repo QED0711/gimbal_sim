@@ -41,11 +41,14 @@ fn save_image_to_disk(data: Vec<u8>){
 fn send_packet(state: State<AppSharedState>, image_arr: Vec<u8>) {
 
     let klv = generate_fake_klv_data(32);
+
+    // thread::sleep(std::time::Duration::from_millis(10)); // this appears to be needed to allow some time before sending data
+
     let mjpeg_socket = state.mjpeg_socket.lock().unwrap();
     let klv_socket = state.klv_socket.lock().unwrap();
-    // println!("{:?}", klv);
-    mjpeg_socket.send_to(&image_arr, &state.mjpeg_target);
+    // println!("{:?}", image_arr.len());
     klv_socket.send_to(&klv, &state.klv_target);
+    mjpeg_socket.send_to(&image_arr, &state.mjpeg_target);
     
 }
 
@@ -97,8 +100,12 @@ fn main() {
 
     // let bus = pipeline.bus().unwrap();
 
+    // let gst_pipeline = "udpsrc address=239.0.0.2 port=8002 ! jpegdec ! x264enc ! queue ! mpegtsmux name=mux ! udpsink host=239.0.0.1 port=8001 udpsrc address=239.0.0.3 port=8003 ! queue ! mux";
+    let gst_pipeline = "udpsrc address=239.0.0.2 port=8002 caps=\"image/jpeg\" ! jpegparse ! jpegdec ! videoconvert ! udpsink address=129.0.0.1 port=8001";
+
+
     let gst = Command::new("gst-launch-1.0")
-        .args(&["udpsrc", "address=239.0.0.2", "port=8002", "!", "jpegdec", "!", "x264enc", "!", "mpegtsmux", "name=mux", "!", "udpsink", "host=239.0.0.1", "port=8001", "udpsrc", "address=239.0.0.3", "port=8003", "!", "mux."])
+        .args(gst_pipeline.split(" "))
         // .args("udpsrc address=239.0.0.2 port=8002 ! jpegdec ! x264enc ! mpegtsmux name=mux ! udpsink host=239.0.0.1 port=8001 udpsrc address=239.0.0.3 port=8003 ! mux".split(" "))
         .spawn()
         .expect("Failed to start gstreamer command");
@@ -107,7 +114,7 @@ fn main() {
     
     // let ffmpeg_output = "-thread_queue_size 512 -i udp://239.0.0.2:8888 -thread_queue_size 512 -f data -i udp://239.0.0.3:8889 -map 0 -map 1 -c copy -f mpegts udp://239.0.0.1:8000";
     // let ffmpeg_output = "-thread_queue_size 10000 -i udp://239.0.0.2:8888 -thread_queue_size 10000 -f data -i - -map 0 -map 1 -c copy -f mpegts udp://239.0.0.1:8000";
-    // let ffmpeg_output = "-thread_queue_size 10000 -i udp://239.0.0.2:8888 -map 0 -c copy -f mpegts udp://239.0.0.1:8000";
+    // let ffmpeg_output = "-thread_queue_size 10000 -i udp://239.0.0.2:8888 -map 0 -c copy -f mpegsts udp://239.0.0.1:8000";
     // let ffmpeg_output = "-loglevel quiet -c:v mjpeg -i /tmp/pipe1 -f data -i /tmp/pipe2 -map 0 -map 1 -c copy -f mpegts udp://239.0.0.1:8000";
     // let ffmpeg_output = "-thread_queue_size 512 -f image2pipe -c:v mjpeg -i /tmp/pipe1 -map 0 -f mpegts udp://239.0.0.1:8000";
 
