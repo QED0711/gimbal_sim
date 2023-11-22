@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{fs::File, io::Write, path::Path, process::{Command, Stdio}, sync::{Arc, Mutex}, net::UdpSocket, thread};
+use std::{fs::File, io::{Write, Read}, path::Path, process::{Command, Stdio}, sync::{Arc, Mutex}, net::UdpSocket, thread};
 use tauri::State;
 use rand::Rng;
 use gstreamer::prelude::*;
@@ -15,13 +15,8 @@ struct AppSharedState {
     // klv_target: String,
 
     // ffmpeg_script: String,
-
-    mjpeg_socket: Arc<Mutex<UdpSocket>>,
-    mjpeg_target: String,
-    klv_socket: Arc<Mutex<UdpSocket>>,
-    klv_target: String,
-
-    // pipe1: File, 
+    pipe1: Mutex<File>, 
+    pipe2: Mutex<File>, 
     // pipe2: File, 
     // data_stdin: Mutex<Option<std::process::ChildStdin>>,
     // video_socket: UdpSocket,
@@ -36,79 +31,87 @@ fn save_image_to_disk(data: Vec<u8>){
     file.write_all(&data).expect("Failed to write to disk");
 }
 
-
 #[tauri::command]
 fn send_packet(state: State<AppSharedState>, image_arr: Vec<u8>) {
 
     let klv = generate_fake_klv_data(32);
 
+    let mut pipe1 = state.pipe1.lock().unwrap();
+    let mut pipe2 = state.pipe2.lock().unwrap();
+
+    pipe1.write_all(&image_arr).expect("Failed to write to video pipe");
+    pipe2.write_all(&klv).expect("Failed to write to klv pipe");
+
+
+    // let mut video_stdin = state.video_stdin.lock().unwrap();
+    // if let Some(stdin) = video_stdin.as_mut(){
+    //     let res = stdin.write_all(&image_arr);
+    //     match(res) {
+    //         Err(e) => println!("{:?}", e),
+    //         _ => {}
+    //     }
+    // }
+
     // thread::sleep(std::time::Duration::from_millis(10)); // this appears to be needed to allow some time before sending data
 
-    let mjpeg_socket = state.mjpeg_socket.lock().unwrap();
-    let klv_socket = state.klv_socket.lock().unwrap();
-    // println!("{:?}", image_arr.len());
-    klv_socket.send_to(&klv, &state.klv_target);
-    mjpeg_socket.send_to(&image_arr, &state.mjpeg_target);
+    // let mjpeg_socket = state.mjpeg_socket.lock().unwrap();
+    // let klv_socket = state.klv_socket.lock().unwrap();
+    // klv_socket.send_to(&klv, &state.klv_target);
+    // mjpeg_socket.send_to(&image_arr, &state.mjpeg_target);
     
 }
 
 fn main() {
 
     // SETUP
+    // make pipe1 fifo
+    let _ = Command::new("mkfifo")
+        .arg("/tmp/pipe1")
+        .status()
+        .expect("Failed to mkfifo for pipe1");
+    let _ = Command::new("mkfifo")
+        .arg("/tmp/pipe2")
+        .status()
+        .expect("Failed to mkfifo for pipe1");
 
-    // UDP Sources
-    let mjpeg_socket = UdpSocket::bind("0.0.0.0:0").expect("failed to bind mjpeg_socket");
-    let mjpeg_target = "239.0.0.2:8002".to_string();
-    let klv_socket = UdpSocket::bind("0.0.0.0:0").expect("failed to bind klv_socket");
-    let klv_target = "239.0.0.3:8003".to_string();
+    // create file reader so there is something listening to this fifo
+    thread::spawn(move || {
+        let mut pipe = File::open("/tmp/pipe1").expect("Failed to open pipe1");
+        let mut buffer = [0;10];
+        match pipe.read(&mut buffer) {
+            Ok(_) => println!("Received data from pipe1"),
+            Err(e) => eprintln!("Error reading FIFO: {}", e),
+        }
+    });
+    thread::spawn(move || {
+        let mut pipe = File::open("/tmp/pipe2").expect("Failed to open pipe1");
+        let mut buffer = [0;10];
+        match pipe.read(&mut buffer) {
+            Ok(_) => println!("Received data from pipe2"),
+            Err(e) => eprintln!("Error reading FIFO: {}", e),
+        }
+    });
 
-    // gstreamer::init().unwrap();
-
-    // let pipeline = gstreamer::Pipeline::new();
-
-    // let udpsrc_mjpeg = gstreamer::ElementFactory::make("udpsrc").build().expect("Failed to build 'udpsrc_mjpeg'");
-    // udpsrc_mjpeg.set_property("address" , "239.0.0.2");
-    // udpsrc_mjpeg.set_property("port", 8002);
-
-    // let jpegdec = gstreamer::ElementFactory::make("jpegdec").build().expect("Failed to build 'jpegdec'");
-    // let x264enc = gstreamer::ElementFactory::make("x264enc").build().expect("Failed to build 'x264enc'");
-    // let mpegtsmux = gstreamer::ElementFactory::make("mpegtsmux").build().expect("Failed to build 'mpegtsmux'");
-
-    // let udpsink = gstreamer::ElementFactory::make("udpsink").build().expect("Failed to build 'udpsink'");
-    // udpsink.set_property("host", "239.0.0.1");
-    // udpsink.set_property("port", 8001);
-
-    // let udpsrc_klv = gstreamer::ElementFactory::make("udpsrc").build().expect("Failed to build 'udpsrc_klv'");
-    // udpsrc_klv.set_property("address", "239.0.0.3");
-    // udpsrc_klv.set_property("port", 8003);
-    
-    // let sequence = [
-    //     &udpsrc_mjpeg,
-    //     &jpegdec,
-    //     &x264enc,
-    //     &mpegtsmux,
-    //     &udpsink,
-    //     &udpsrc_klv
-    // ];
-    
-    // pipeline.add_many(&sequence).expect("Failed to add elements to pipeline");
-
-    // gstreamer::Element::link_many(&sequence);
-    // udpsrc_klv.link_pads(None, &mpegtsmux, Some("sink_%u")).expect("Failed to link udpsrc_klv pads");
-
-    // pipeline.set_state(gstreamer::State::Playing).expect("Failed to start gstreamer pipeline");
-
-    // let bus = pipeline.bus().unwrap();
+    let mut pipe1 = File::create("/tmp/pipe1").expect("failed to create handler for pipe1");
+    pipe1.write_all(b"test").expect("Failed to write test message to pipe1");
+    let mut pipe2 = File::create("/tmp/pipe2").expect("failed to create handler for pipe1");
+    pipe2.write_all(b"test").expect("Failed to write test message to pipe1");
+    println!("MADE IT PAST PIPE1");
 
     // let gst_pipeline = "udpsrc address=239.0.0.2 port=8002 ! jpegdec ! x264enc ! queue ! mpegtsmux name=mux ! udpsink host=239.0.0.1 port=8001 udpsrc address=239.0.0.3 port=8003 ! queue ! mux";
-    let gst_pipeline = "udpsrc address=239.0.0.2 port=8002 caps=\"image/jpeg\" ! jpegparse ! jpegdec ! videoconvert ! udpsink address=129.0.0.1 port=8001";
+    // let gst_pipeline = "udpsrc address=239.0.0.2 port=8002 caps=\"image/jpeg\" ! jpegparse ! jpegdec ! videoconvert ! udpsink address=239.0.0.1 port=8001";
+    // let gst_pipeline = "filesrc location=/tmp/pipe1 ! jpegparse ! jpegdec ! videoconvert ! x264enc ! mpegtsmux ! udpsink host=239.0.0.1 port=8001";
+    let gst_pipeline = "filesrc location=/tmp/pipe1 ! jpegparse ! jpegdec ! videoconvert ! x264enc ! mpegtsmux name=mux ! udpsink host=239.0.0.1 port=8001 filesrc location=/tmp/pipe2 ! mux";
+    // let gst_pipeline = "filesrc location=/tmp/pipe1 ! fdsink fd=1"; // printing to stdout for testing
 
 
     let gst = Command::new("gst-launch-1.0")
         .args(gst_pipeline.split(" "))
         // .args("udpsrc address=239.0.0.2 port=8002 ! jpegdec ! x264enc ! mpegtsmux name=mux ! udpsink host=239.0.0.1 port=8001 udpsrc address=239.0.0.3 port=8003 ! mux".split(" "))
+        .stdin(Stdio::piped())
         .spawn()
         .expect("Failed to start gstreamer command");
+    // let video_stdin = Mutex::new(gst.stdin);
 
     // let ffmpeg_video = "-loglevel quiet -f image2pipe -c:v mjpeg -i - -f mpegts udp://239.0.0.2:8888";
     
@@ -143,10 +146,8 @@ fn main() {
 
 
     let shared_state = AppSharedState{
-        mjpeg_socket: Arc::new(Mutex::new(mjpeg_socket)),
-        mjpeg_target,
-        klv_socket: Arc::new(Mutex::new(klv_socket)),
-        klv_target,
+        pipe1: Mutex::new(pipe1),
+        pipe2: Mutex::new(pipe2),
     };
 
     tauri::Builder::default()
