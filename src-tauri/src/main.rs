@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{fs::File, io::{Write, Read}, path::Path, process::{Command, Stdio}, sync::{Arc, Mutex}, net::UdpSocket, thread, time::{SystemTime, UNIX_EPOCH}};
+use std::{fs::File, io::{Write, Read}, path::Path, process::{Command, Stdio}, sync::{Arc, Mutex}, net::UdpSocket, thread, time::{SystemTime, UNIX_EPOCH}, env};
 use tauri::State;
 use rand::Rng;
 use gstreamer as gst;
@@ -19,10 +19,8 @@ struct AppSharedState {
     // klv_target: String,
 
     // ffmpeg_script: String,
-    pipe1: Mutex<File>, 
-    pipe2: Mutex<File>, 
-
-    gst_appsrc: Arc<Mutex<gst_app::AppSrc>>,
+    video_appsrc: Arc<Mutex<gst_app::AppSrc>>,
+    klv_appsrc: Arc<Mutex<gst_app::AppSrc>>,
     // pipe2: File, 
     // data_stdin: Mutex<Option<std::process::ChildStdin>>,
     // video_socket: UdpSocket,
@@ -52,7 +50,8 @@ fn send_packet(state: State<AppSharedState>, image_arr: Vec<u8>) {
 
     let klv = generate_fake_klv_data(32);
 
-    let mut appsrc = state.gst_appsrc.lock().unwrap();
+    let mut video_appsrc = state.video_appsrc.lock().unwrap();
+    let mut klv_appsrc = state.klv_appsrc.lock().unwrap();
     
     let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create image gst buffer");
     timestamp_buffer(&mut image_buf, &image_arr);
@@ -60,97 +59,85 @@ fn send_packet(state: State<AppSharedState>, image_arr: Vec<u8>) {
     let mut klv_buf = gst::Buffer::with_size(klv.len()).expect("Failed to create klv gst buffer");
     timestamp_buffer(&mut klv_buf, &klv);
     
-    appsrc.push_buffer(image_buf).expect("Failed to push to buffer");
-
-    // let mut pipe1 = state.pipe1.lock().unwrap();
-    // let mut pipe2 = state.pipe2.lock().unwrap();
-
-    // pipe1.write_all(&image_arr).expect("Failed to write to video pipe");
-    // pipe2.write_all(&klv).expect("Failed to write to klv pipe");
-
-
-    // let mut video_stdin = state.video_stdin.lock().unwrap();
-    // if let Some(stdin) = video_stdin.as_mut(){
-    //     let res = stdin.write_all(&image_arr);
-    //     match(res) {
-    //         Err(e) => println!("{:?}", e),
-    //         _ => {}
-    //     }
-    // }
-
-    // thread::sleep(std::time::Duration::from_millis(10)); // this appears to be needed to allow some time before sending data
-
-    // let mjpeg_socket = state.mjpeg_socket.lock().unwrap();
-    // let klv_socket = state.klv_socket.lock().unwrap();
-    // klv_socket.send_to(&klv, &state.klv_target);
-    // mjpeg_socket.send_to(&image_arr, &state.mjpeg_target);
-    
+    video_appsrc.push_buffer(image_buf).expect("Failed to push to image buffer");
+    // klv_appsrc.push_buffer(klv_buf).expect("Failed to push to klv buffer");
 }
 
 fn main() {
+
+    // env::set_var("GST_DEBUG", "5");
 
     // SETUP
     // Initialize GStreamer
     gst::init().expect("Failed to init gstreamer");
 
     // Create the elements
-    let appsrc = gst::ElementFactory::make("appsrc")
+    let video_appsrc = gst::ElementFactory::make("appsrc")
         .build()
-        .expect("Could not create appsrc element.")
+        .expect("Could not create video_appsrc element.")
         .dynamic_cast::<gst_app::AppSrc>()
-        .expect("Failed to cast to AppSrc");
-    let fdsink = gst::ElementFactory::make("fdsink").build().expect("Could not create fdsink element.");
+        .expect("Failed to cast to Video AppSrc");
+    let klv_appsrc = gst::ElementFactory::make("appsrc")
+        .build()
+        .expect("Could not create klv_appsrc element.")
+        .dynamic_cast::<gst_app::AppSrc>()
+        .expect("Failed to cast to KLV AppSrc");
 
-    fdsink.set_property("fd", 1); 
+    // Set caps for the KLV appsrc element
+    let caps = gst::Caps::new_simple(
+        "meta/x-klv",
+        &[
+            ("parsed", &true),
+        ],
+    );
+    klv_appsrc.set_caps(Some(&caps));
+    
+    let jpegparse = gst::ElementFactory::make("jpegparse").build().expect("failed to build jpegparse");
+    let jpegdec = gst::ElementFactory::make("jpegdec").build().expect("failed to build jpegdec");
+    let videoconvert = gst::ElementFactory::make("videoconvert").build().expect("failed to build videoconvert");
+    let x264enc = gst::ElementFactory::make("x264enc").build().expect("failed to build x264enc");
+    let video_queue = gst::ElementFactory::make("queue").build().expect("Failed to build video queue");
+    let klv_queue = gst::ElementFactory::make("queue").build().expect("Failed to build klv queue");
+    let mpegtsmux = gst::ElementFactory::make("mpegtsmux").build().expect("failed to build mpegtsmux");
+    let udpsink = gst::ElementFactory::make("udpsink").build().expect("failed to build udpsink");
+
+    udpsink.set_property_from_str("host", "239.0.0.1");
+    udpsink.set_property_from_str("port", "8001");
+
+    let fdsink = gst::ElementFactory::make("fdsink").build().expect("Failed to build fdsink");
+    fdsink.set_property("fd", 1);
 
     let pipeline = gst::Pipeline::new();
     pipeline.add_many(&[
-        &appsrc.upcast_ref(),
-        &fdsink
+        &video_appsrc.upcast_ref(),
+        &jpegparse,
+        &jpegdec,
+        &videoconvert,
+        &x264enc,
+        &video_queue,
+        &klv_queue,
+        &klv_appsrc.upcast_ref(),
+        &mpegtsmux,
+        &udpsink,
     ])
     .expect("failed to add to pipeline");
     
     gst::Element::link_many(&[
-        &appsrc.upcast_ref(),
-        &fdsink
+        &video_appsrc.upcast_ref(),
+        &jpegparse,
+        &jpegdec,
+        &videoconvert,
+        &x264enc,
+        &video_queue,
+        &mpegtsmux,
     ])
     .expect("failed to link_many");
+    
+    // klv_appsrc.link(&klv_queue).expect("Failed to link klv_appsrc to klv_queue element");
+    // klv_queue.link(&mpegtsmux).expect("Failed to link klv_queue to mpegtsmux element");
+    mpegtsmux.link(&udpsink).expect("Failed to link mpegtsmux to udpsink");
 
     pipeline.set_state(gst::State::Playing).expect("Failed to set pipeline to playing");
-
-    // make pipe1 fifo
-    let _ = Command::new("mkfifo")
-        .arg("/tmp/pipe1")
-        .status()
-        .expect("Failed to mkfifo for pipe1");
-    let _ = Command::new("mkfifo")
-        .arg("/tmp/pipe2")
-        .status()
-        .expect("Failed to mkfifo for pipe1");
-
-    // create file reader so there is something listening to this fifo
-    thread::spawn(move || {
-        let mut pipe = File::open("/tmp/pipe1").expect("Failed to open pipe1");
-        let mut buffer = [0;10];
-        match pipe.read(&mut buffer) {
-            Ok(_) => println!("Received data from pipe1"),
-            Err(e) => eprintln!("Error reading FIFO: {}", e),
-        }
-    });
-    thread::spawn(move || {
-        let mut pipe = File::open("/tmp/pipe2").expect("Failed to open pipe1");
-        let mut buffer = [0;10];
-        match pipe.read(&mut buffer) {
-            Ok(_) => println!("Received data from pipe2"),
-            Err(e) => eprintln!("Error reading FIFO: {}", e),
-        }
-    });
-
-    let mut pipe1 = File::create("/tmp/pipe1").expect("failed to create handler for pipe1");
-    pipe1.write_all(b"test").expect("Failed to write test message to pipe1");
-    let mut pipe2 = File::create("/tmp/pipe2").expect("failed to create handler for pipe1");
-    pipe2.write_all(b"test").expect("Failed to write test message to pipe1");
-    println!("MADE IT PAST PIPE1");
 
     // let gst_pipeline = "udpsrc address=239.0.0.2 port=8002 ! jpegdec ! x264enc ! queue ! mpegtsmux name=mux ! udpsink host=239.0.0.1 port=8001 udpsrc address=239.0.0.3 port=8003 ! queue ! mux";
     // let gst_pipeline = "udpsrc address=239.0.0.2 port=8002 caps=\"image/jpeg\" ! jpegparse ! jpegdec ! videoconvert ! udpsink address=239.0.0.1 port=8001";
@@ -200,9 +187,8 @@ fn main() {
 
 
     let shared_state = AppSharedState{
-        pipe1: Mutex::new(pipe1),
-        pipe2: Mutex::new(pipe2),
-        gst_appsrc: Arc::new(Mutex::new(appsrc)),
+        video_appsrc: Arc::new(Mutex::new(video_appsrc)),
+        klv_appsrc: Arc::new(Mutex::new(klv_appsrc)),
     };
 
     tauri::Builder::default()
