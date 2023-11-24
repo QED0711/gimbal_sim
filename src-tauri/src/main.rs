@@ -1,10 +1,14 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{fs::File, io::{Write, Read}, path::Path, process::{Command, Stdio}, sync::{Arc, Mutex}, net::UdpSocket, thread};
+use std::{fs::File, io::{Write, Read}, path::Path, process::{Command, Stdio}, sync::{Arc, Mutex}, net::UdpSocket, thread, time::{SystemTime, UNIX_EPOCH}};
 use tauri::State;
 use rand::Rng;
+use gstreamer as gst;
+use gstreamer_app as gst_app;
 use gstreamer::prelude::*;
+
+
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
 struct AppSharedState {
@@ -17,6 +21,8 @@ struct AppSharedState {
     // ffmpeg_script: String,
     pipe1: Mutex<File>, 
     pipe2: Mutex<File>, 
+
+    gst_appsrc: Arc<Mutex<gst_app::AppSrc>>,
     // pipe2: File, 
     // data_stdin: Mutex<Option<std::process::ChildStdin>>,
     // video_socket: UdpSocket,
@@ -31,16 +37,36 @@ fn save_image_to_disk(data: Vec<u8>){
     file.write_all(&data).expect("Failed to write to disk");
 }
 
+#[allow(dead_code)]
+fn timestamp_buffer(buffer: &mut gst::Buffer, data: &Vec<u8>){
+    let buffer = buffer.get_mut().unwrap();
+    buffer.copy_from_slice(0, data);
+    let now = SystemTime::now().duration_since(UNIX_EPOCH)
+        .expect("Time went backwards");
+    let pts = gst::ClockTime::from_mseconds(now.as_millis() as u64);
+    buffer.set_pts(pts);
+}
+
 #[tauri::command]
 fn send_packet(state: State<AppSharedState>, image_arr: Vec<u8>) {
 
     let klv = generate_fake_klv_data(32);
 
-    let mut pipe1 = state.pipe1.lock().unwrap();
-    let mut pipe2 = state.pipe2.lock().unwrap();
+    let mut appsrc = state.gst_appsrc.lock().unwrap();
+    
+    let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create image gst buffer");
+    timestamp_buffer(&mut image_buf, &image_arr);
 
-    pipe1.write_all(&image_arr).expect("Failed to write to video pipe");
-    pipe2.write_all(&klv).expect("Failed to write to klv pipe");
+    let mut klv_buf = gst::Buffer::with_size(klv.len()).expect("Failed to create klv gst buffer");
+    timestamp_buffer(&mut klv_buf, &klv);
+    
+    appsrc.push_buffer(image_buf).expect("Failed to push to buffer");
+
+    // let mut pipe1 = state.pipe1.lock().unwrap();
+    // let mut pipe2 = state.pipe2.lock().unwrap();
+
+    // pipe1.write_all(&image_arr).expect("Failed to write to video pipe");
+    // pipe2.write_all(&klv).expect("Failed to write to klv pipe");
 
 
     // let mut video_stdin = state.video_stdin.lock().unwrap();
@@ -64,6 +90,34 @@ fn send_packet(state: State<AppSharedState>, image_arr: Vec<u8>) {
 fn main() {
 
     // SETUP
+    // Initialize GStreamer
+    gst::init().expect("Failed to init gstreamer");
+
+    // Create the elements
+    let appsrc = gst::ElementFactory::make("appsrc")
+        .build()
+        .expect("Could not create appsrc element.")
+        .dynamic_cast::<gst_app::AppSrc>()
+        .expect("Failed to cast to AppSrc");
+    let fdsink = gst::ElementFactory::make("fdsink").build().expect("Could not create fdsink element.");
+
+    fdsink.set_property("fd", 1); 
+
+    let pipeline = gst::Pipeline::new();
+    pipeline.add_many(&[
+        &appsrc.upcast_ref(),
+        &fdsink
+    ])
+    .expect("failed to add to pipeline");
+    
+    gst::Element::link_many(&[
+        &appsrc.upcast_ref(),
+        &fdsink
+    ])
+    .expect("failed to link_many");
+
+    pipeline.set_state(gst::State::Playing).expect("Failed to set pipeline to playing");
+
     // make pipe1 fifo
     let _ = Command::new("mkfifo")
         .arg("/tmp/pipe1")
@@ -101,16 +155,16 @@ fn main() {
     // let gst_pipeline = "udpsrc address=239.0.0.2 port=8002 ! jpegdec ! x264enc ! queue ! mpegtsmux name=mux ! udpsink host=239.0.0.1 port=8001 udpsrc address=239.0.0.3 port=8003 ! queue ! mux";
     // let gst_pipeline = "udpsrc address=239.0.0.2 port=8002 caps=\"image/jpeg\" ! jpegparse ! jpegdec ! videoconvert ! udpsink address=239.0.0.1 port=8001";
     // let gst_pipeline = "filesrc location=/tmp/pipe1 ! jpegparse ! jpegdec ! videoconvert ! x264enc ! mpegtsmux ! udpsink host=239.0.0.1 port=8001";
-    let gst_pipeline = "filesrc location=/tmp/pipe1 ! jpegparse ! jpegdec ! videoconvert ! x264enc ! mpegtsmux name=mux ! udpsink host=239.0.0.1 port=8001 filesrc location=/tmp/pipe2 ! mux";
+    let gst_pipeline = "filesrc location=/tmp/pipe1 ! jpegparse ! jpegdec ! videoconvert ! x264enc ! mpegtsmux name=mux ! udpsink host=239.0.0.1 port=8001 filesrc location=/tmp/pipe2 ! mux.";
     // let gst_pipeline = "filesrc location=/tmp/pipe1 ! fdsink fd=1"; // printing to stdout for testing
 
 
-    let gst = Command::new("gst-launch-1.0")
-        .args(gst_pipeline.split(" "))
-        // .args("udpsrc address=239.0.0.2 port=8002 ! jpegdec ! x264enc ! mpegtsmux name=mux ! udpsink host=239.0.0.1 port=8001 udpsrc address=239.0.0.3 port=8003 ! mux".split(" "))
-        .stdin(Stdio::piped())
-        .spawn()
-        .expect("Failed to start gstreamer command");
+    // let gst = Command::new("gst-launch-1.0")
+    //     .args(gst_pipeline.split(" "))
+    //     // .args("udpsrc address=239.0.0.2 port=8002 ! jpegdec ! x264enc ! mpegtsmux name=mux ! udpsink host=239.0.0.1 port=8001 udpsrc address=239.0.0.3 port=8003 ! mux".split(" "))
+    //     .stdin(Stdio::piped())
+    //     .spawn()
+    //     .expect("Failed to start gstreamer command");
     // let video_stdin = Mutex::new(gst.stdin);
 
     // let ffmpeg_video = "-loglevel quiet -f image2pipe -c:v mjpeg -i - -f mpegts udp://239.0.0.2:8888";
@@ -148,6 +202,7 @@ fn main() {
     let shared_state = AppSharedState{
         pipe1: Mutex::new(pipe1),
         pipe2: Mutex::new(pipe2),
+        gst_appsrc: Arc::new(Mutex::new(appsrc)),
     };
 
     tauri::Builder::default()
