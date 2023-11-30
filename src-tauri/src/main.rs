@@ -1,14 +1,15 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{fs::File, io::{Write, Read}, path::Path, process::{Command, Stdio}, sync::{Arc, Mutex}, net::UdpSocket, thread, time::{SystemTime, UNIX_EPOCH}, env};
+use std::{fs::File, io::{Write, Read}, path::Path, process::{Command, Stdio}, sync::{Arc, Mutex, atomic::{AtomicU64, Ordering}}, net::UdpSocket, thread, time::{SystemTime, UNIX_EPOCH}, env};
 use tauri::State;
 use rand::Rng;
 use gstreamer as gst;
 use gstreamer_app as gst_app;
 use gstreamer::prelude::*;
 
-
+static TIMESTAMP_COUNTER: AtomicU64 = AtomicU64::new(0);
+const BUFFER_DURATION_MS: u64 = 33;
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
 struct AppSharedState {
@@ -38,10 +39,15 @@ fn save_image_to_disk(data: Vec<u8>){
 #[allow(dead_code)]
 fn timestamp_buffer(buffer: &mut gst::Buffer, data: &Vec<u8>){
     let buffer = buffer.get_mut().unwrap();
-    buffer.copy_from_slice(0, data);
-    let now = SystemTime::now().duration_since(UNIX_EPOCH)
-        .expect("Time went backwards");
-    let pts = gst::ClockTime::from_mseconds(now.as_millis() as u64);
+    let _ = buffer.copy_from_slice(0, data);
+
+    // let now = SystemTime::now().duration_since(UNIX_EPOCH)
+    //     .expect("Time went backwards");
+
+    let now = TIMESTAMP_COUNTER.fetch_add(BUFFER_DURATION_MS, Ordering::SeqCst);
+    // let pts = gst::ClockTime::from_mseconds(now.as_millis() as u64);
+    let pts = gst::ClockTime::from_mseconds(now);
+    println!("PTS: {:?}", pts);
     buffer.set_pts(pts);
 }
 
@@ -50,22 +56,22 @@ fn send_packet(state: State<AppSharedState>, image_arr: Vec<u8>) {
 
     let klv = generate_fake_klv_data(32);
 
-    let mut video_appsrc = state.video_appsrc.lock().unwrap();
-    let mut klv_appsrc = state.klv_appsrc.lock().unwrap();
+    let video_appsrc = state.video_appsrc.lock().unwrap();
+    let klv_appsrc = state.klv_appsrc.lock().unwrap();
     
-    let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create image gst buffer");
-    timestamp_buffer(&mut image_buf, &image_arr);
+    // let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create image gst buffer");
+    // timestamp_buffer(&mut image_buf, &image_arr);
 
     let mut klv_buf = gst::Buffer::with_size(klv.len()).expect("Failed to create klv gst buffer");
     timestamp_buffer(&mut klv_buf, &klv);
     
-    video_appsrc.push_buffer(image_buf).expect("Failed to push to image buffer");
-    // klv_appsrc.push_buffer(klv_buf).expect("Failed to push to klv buffer");
+    // video_appsrc.push_buffer(image_buf).expect("Failed to push to image buffer");
+    klv_appsrc.push_buffer(klv_buf).expect("Failed to push to klv buffer");
 }
 
 fn main() {
 
-    // env::set_var("GST_DEBUG", "5");
+    env::set_var("GST_DEBUG", "5");
 
     // SETUP
     // Initialize GStreamer
@@ -84,20 +90,18 @@ fn main() {
         .expect("Failed to cast to KLV AppSrc");
 
     // Set caps for the KLV appsrc element
-    let caps = gst::Caps::new_simple(
+    let klv_caps = gst::Caps::new_simple(
         "meta/x-klv",
         &[
             ("parsed", &true),
         ],
     );
-    klv_appsrc.set_caps(Some(&caps));
+    // klv_appsrc.set_caps(Some(&caps));
     
     let jpegparse = gst::ElementFactory::make("jpegparse").build().expect("failed to build jpegparse");
     let jpegdec = gst::ElementFactory::make("jpegdec").build().expect("failed to build jpegdec");
     let videoconvert = gst::ElementFactory::make("videoconvert").build().expect("failed to build videoconvert");
     let x264enc = gst::ElementFactory::make("x264enc").build().expect("failed to build x264enc");
-    let video_queue = gst::ElementFactory::make("queue").build().expect("Failed to build video queue");
-    let klv_queue = gst::ElementFactory::make("queue").build().expect("Failed to build klv queue");
     let mpegtsmux = gst::ElementFactory::make("mpegtsmux").build().expect("failed to build mpegtsmux");
     let udpsink = gst::ElementFactory::make("udpsink").build().expect("failed to build udpsink");
 
@@ -114,27 +118,23 @@ fn main() {
         &jpegdec,
         &videoconvert,
         &x264enc,
-        &video_queue,
-        &klv_queue,
         &klv_appsrc.upcast_ref(),
         &mpegtsmux,
         &udpsink,
     ])
     .expect("failed to add to pipeline");
     
-    gst::Element::link_many(&[
-        &video_appsrc.upcast_ref(),
-        &jpegparse,
-        &jpegdec,
-        &videoconvert,
-        &x264enc,
-        &video_queue,
-        &mpegtsmux,
-    ])
-    .expect("failed to link_many");
+    // gst::Element::link_many(&[
+    //     &video_appsrc.upcast_ref(),
+    //     &jpegparse,
+    //     &jpegdec,
+    //     &videoconvert,
+    //     &x264enc,
+    //     &mpegtsmux,
+    // ])
+    // .expect("failed to link_many");
     
-    // klv_appsrc.link(&klv_queue).expect("Failed to link klv_appsrc to klv_queue element");
-    // klv_queue.link(&mpegtsmux).expect("Failed to link klv_queue to mpegtsmux element");
+    klv_appsrc.link_filtered(&mpegtsmux, &klv_caps).expect("Failed to link klv_appsrc to mpegtsmux element");
     mpegtsmux.link(&udpsink).expect("Failed to link mpegtsmux to udpsink");
 
     pipeline.set_state(gst::State::Playing).expect("Failed to set pipeline to playing");
