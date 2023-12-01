@@ -49,6 +49,8 @@ fn timestamp_buffer(buffer: &mut gst::Buffer, data: &Vec<u8>){
     let pts = gst::ClockTime::from_mseconds(now);
     println!("PTS: {:?}", pts);
     buffer.set_pts(pts);
+    buffer.set_dts(pts);
+    buffer.set_duration(gst::ClockTime::from_mseconds(BUFFER_DURATION_MS));
 }
 
 #[tauri::command]
