@@ -37,8 +37,9 @@ fn timestamp_buffer(buffer: &mut gst::Buffer, data: &Vec<u8>){
     let pts = gst::ClockTime::from_mseconds(now.as_millis() as u64);
     // let pts = gst::ClockTime::from_mseconds(now);
     buffer.set_pts(pts);
-    buffer.set_dts(pts + gst::ClockTime::from_mseconds(BUFFER_DURATION_MS));
-    buffer.set_duration(gst::ClockTime::from_mseconds(BUFFER_DURATION_MS));
+    // buffer.set_dts(pts + gst::ClockTime::from_mseconds(BUFFER_DURATION_MS));
+    // buffer.set_dts(pts);
+    // buffer.set_duration(gst::ClockTime::from_mseconds(BUFFER_DURATION_MS));
 }
 
 #[tauri::command]
@@ -55,8 +56,16 @@ fn send_packet(state: State<AppSharedState>, image_arr: Vec<u8>) {
     let mut klv_buf = gst::Buffer::with_size(klv.len()).expect("Failed to create klv gst buffer");
     timestamp_buffer(&mut klv_buf, &klv);
     
+    // println!("{:?}", &image_buf);
+    // println!("{:?}", &klv_buf);
+
+    assert!(image_buf.size() == image_arr.len(), "Buffer size is not correct");
+    if let Ok(map) = image_buf.map_readable() {
+        println!("VIDEO BUFFER CONTENTS (first 10 bytes): {:?}", &map.as_slice()[..10.min(map.size())]);
+    }
+
     video_appsrc.push_buffer(image_buf).expect("Failed to push to image buffer");
-    klv_appsrc.push_buffer(klv_buf).expect("Failed to push to klv buffer");
+    // klv_appsrc.push_buffer(klv_buf).expect("Failed to push to klv buffer");
 }
 
 fn main() {
@@ -81,6 +90,13 @@ fn main() {
         .expect("Failed to cast to KLV AppSrc");
 
     // Set caps for the KLV appsrc element
+    let video_caps = gst::caps::Caps::builder("image/jpeg")
+        .field("width", &1280)
+        .field("height", &720)
+        .field("framerate", &gst::Fraction::new(20, 1))
+        .build();
+    video_appsrc.set_caps(Some(&video_caps));
+
     let klv_caps = gst::Caps::new_simple(
         "meta/x-klv",
         &[
@@ -96,9 +112,13 @@ fn main() {
     let klv_queue = gst::ElementFactory::make("queue").build().expect("failed to build klvqueue");
     let mpegtsmux = gst::ElementFactory::make("mpegtsmux").build().expect("failed to build mpegtsmux");
     let udpsink = gst::ElementFactory::make("udpsink").build().expect("failed to build udpsink");
+    let fakesink = gst::ElementFactory::make("fakesink").build().expect("failed to build fakesink");
 
     udpsink.set_property_from_str("host", "239.0.0.1");
     udpsink.set_property_from_str("port", "8001");
+
+    fakesink.set_property_from_str("sync", "false");
+    fakesink.set_property_from_str("dump", "true");
 
     let fdsink = gst::ElementFactory::make("fdsink").build().expect("Failed to build fdsink");
     fdsink.set_property("fd", 1);
@@ -115,23 +135,28 @@ fn main() {
         &klv_appsrc.upcast_ref(),
         &mpegtsmux,
         &udpsink,
+        &fakesink,
+        &fdsink,
     ])
     .expect("failed to add to pipeline");
     
     gst::Element::link_many(&[
         &video_appsrc.upcast_ref(),
-        &jpegparse,
-        &jpegdec,
-        &videoconvert,
-        &x264enc,
-        &video_queue,
-        &mpegtsmux,
+        &fdsink,
+        // &jpegparse,
+        // &jpegdec,
+        // &videoconvert,
+        // &x264enc,
+        // // &video_queue,
+        // &mpegtsmux,
+        // &fakesink,
     ])
     .expect("failed to link_many");
     
-    klv_appsrc.link(&klv_queue).expect("Failed to link klv_appsrc to klv_queue element");
-    klv_queue.link_filtered(&mpegtsmux, &klv_caps).expect("Failed to link klv_queue to mpegtsmux element");
-    mpegtsmux.link(&udpsink).expect("Failed to link mpegtsmux to udpsink");
+    // klv_appsrc.link(&klv_queue).expect("Failed to link klv_appsrc to klv_queue element");
+    // klv_queue.link_filtered(&mpegtsmux, &klv_caps).expect("Failed to link klv_queue to mpegtsmux element");
+    // klv_appsrc.link_filtered(&mpegtsmux, &klv_caps).expect("Failed to link klvsrc to mpegtsmux element"); // without queue in between
+    // mpegtsmux.link(&udpsink).expect("Failed to link mpegtsmux to udpsink");
 
     // Create start time segment - tells gstreamer that we're starting at 0
     let mut formatted_segment = gst::Segment::new();
