@@ -37,9 +37,9 @@ fn timestamp_buffer(buffer: &mut gst::Buffer, data: &Vec<u8>){
     let pts = gst::ClockTime::from_mseconds(now.as_millis() as u64);
     // let pts = gst::ClockTime::from_mseconds(now);
     buffer.set_pts(pts);
-    // buffer.set_dts(pts + gst::ClockTime::from_mseconds(BUFFER_DURATION_MS));
+    buffer.set_dts(pts + gst::ClockTime::from_mseconds(BUFFER_DURATION_MS));
     // buffer.set_dts(pts);
-    // buffer.set_duration(gst::ClockTime::from_mseconds(BUFFER_DURATION_MS));
+    buffer.set_duration(gst::ClockTime::from_mseconds(BUFFER_DURATION_MS));
 }
 
 #[tauri::command]
@@ -59,13 +59,13 @@ fn send_packet(state: State<AppSharedState>, image_arr: Vec<u8>) {
     // println!("{:?}", &image_buf);
     // println!("{:?}", &klv_buf);
 
-    assert!(image_buf.size() == image_arr.len(), "Buffer size is not correct");
-    if let Ok(map) = image_buf.map_readable() {
-        println!("VIDEO BUFFER CONTENTS (first 10 bytes): {:?}", &map.as_slice()[..10.min(map.size())]);
-    }
+    // assert!(klv_buf.size() == klv.len(), "Buffer size is not correct");
+    // if let Ok(map) = klv_buf.map_readable() {
+    //     println!("KLV BUFFER CONTENTS (first 10 bytes): {:?}", &map.as_slice()[..10.min(map.size())]);
+    // }
 
     video_appsrc.push_buffer(image_buf).expect("Failed to push to image buffer");
-    // klv_appsrc.push_buffer(klv_buf).expect("Failed to push to klv buffer");
+    klv_appsrc.push_buffer(klv_buf).expect("Failed to push to klv buffer");
 }
 
 fn main() {
@@ -78,6 +78,7 @@ fn main() {
     gst::init().expect("Failed to init gstreamer");
 
     // Create the elements
+    // APP SRC SETUP
     let video_appsrc = gst::ElementFactory::make("appsrc")
         .build()
         .expect("Could not create video_appsrc element.")
@@ -103,7 +104,14 @@ fn main() {
             ("parsed", &true),
         ],
     );
-    
+
+    // video_appsrc.set_max_bytes(500_000_000);
+    let vid_appsrc_prop = video_appsrc.max_bytes();
+    println!("APPSRC PROP: {:?}", vid_appsrc_prop);
+
+    let videotestsrc = gst::ElementFactory::make("videotestsrc").build().expect("failed to build videotestsrc");
+    videotestsrc.set_property_from_str("pattern", "smpte");
+
     let jpegparse = gst::ElementFactory::make("jpegparse").build().expect("failed to build jpegparse");
     let jpegdec = gst::ElementFactory::make("jpegdec").build().expect("failed to build jpegdec");
     let videoconvert = gst::ElementFactory::make("videoconvert").build().expect("failed to build videoconvert");
@@ -125,38 +133,40 @@ fn main() {
 
     let pipeline = gst::Pipeline::new();
     pipeline.add_many(&[
+        // &videotestsrc,
         &video_appsrc.upcast_ref(),
         &jpegparse,
         &jpegdec,
         &videoconvert,
         &x264enc,
-        &video_queue,
-        &klv_queue,
+        // &video_queue,
+        // &klv_queue,
         &klv_appsrc.upcast_ref(),
         &mpegtsmux,
         &udpsink,
-        &fakesink,
-        &fdsink,
+        // &fakesink,
+        // &fdsink,
     ])
     .expect("failed to add to pipeline");
     
     gst::Element::link_many(&[
+        // &videotestsrc,
         &video_appsrc.upcast_ref(),
-        &fdsink,
-        // &jpegparse,
-        // &jpegdec,
-        // &videoconvert,
-        // &x264enc,
-        // // &video_queue,
-        // &mpegtsmux,
+        &jpegparse,
+        &jpegdec,
+        &videoconvert,
+        &x264enc,
+        // &video_queue,
+        &mpegtsmux,
+        // &fdsink,
         // &fakesink,
     ])
     .expect("failed to link_many");
     
     // klv_appsrc.link(&klv_queue).expect("Failed to link klv_appsrc to klv_queue element");
     // klv_queue.link_filtered(&mpegtsmux, &klv_caps).expect("Failed to link klv_queue to mpegtsmux element");
-    // klv_appsrc.link_filtered(&mpegtsmux, &klv_caps).expect("Failed to link klvsrc to mpegtsmux element"); // without queue in between
-    // mpegtsmux.link(&udpsink).expect("Failed to link mpegtsmux to udpsink");
+    klv_appsrc.link_filtered(&mpegtsmux, &klv_caps).expect("Failed to link klvsrc to mpegtsmux element"); // without queue in between
+    mpegtsmux.link(&udpsink).expect("Failed to link mpegtsmux to udpsink");
 
     // Create start time segment - tells gstreamer that we're starting at 0
     let mut formatted_segment = gst::Segment::new();
@@ -167,7 +177,7 @@ fn main() {
     let segment = gst::event::Segment::new(&formatted_segment);
 
     let segment_event = gst::Event::from(segment);
-    pipeline.send_event(segment_event);
+    // pipeline.send_event(segment_event);
 
     // Start pipeline
     pipeline.set_state(gst::State::Playing).expect("Failed to set pipeline to playing");
