@@ -71,7 +71,7 @@ fn send_packet(state: State<AppSharedState>, image_arr: Vec<u8>) {
 fn main() {
 
     env::set_var("RUST_BACKTRACE", "1");
-    env::set_var("GST_DEBUG", "5");
+    env::set_var("GST_DEBUG", "0");
 
     // SETUP
     // Initialize GStreamer
@@ -98,16 +98,27 @@ fn main() {
         .build();
     video_appsrc.set_caps(Some(&video_caps));
 
-    let klv_caps = gst::Caps::new_simple(
-        "meta/x-klv",
-        &[
-            ("parsed", &true),
-        ],
-    );
+    let klv_caps = gst::caps::Caps::builder("meta/x-klv")
+        .field("parsed", true)
+        .build();
+    klv_appsrc.set_caps(Some(&klv_caps));
 
-    // video_appsrc.set_max_bytes(500_000_000);
-    let vid_appsrc_prop = video_appsrc.max_bytes();
-    println!("APPSRC PROP: {:?}", vid_appsrc_prop);
+    video_appsrc.set_is_live(true);
+    klv_appsrc.set_is_live(true);
+    println!("VIDEO IS LIVE: {}", video_appsrc.is_live());
+    println!("KLV IS LIVE: {}", klv_appsrc.is_live());
+
+    // video_appsrc.set_handle_segment_change(true);
+    // klv_appsrc.set_handle_segment_change(true);
+
+    // for appsrc in &[&video_appsrc, &klv_appsrc] {
+    //     let mut segment = gst::Segment::new();
+    //     segment.set_format(gst::Format::Time);
+    //     segment.set_start(gst::ClockTime::from_seconds(0));
+    //     let segment_event = gst::event::Segment::new(&segment);
+    //     let result = appsrc.send_event(segment_event);
+    //     println!("SEGMENT SEND RESULT: {result}");
+    // }
 
     let videotestsrc = gst::ElementFactory::make("videotestsrc").build().expect("failed to build videotestsrc");
     videotestsrc.set_property_from_str("pattern", "smpte");
@@ -131,6 +142,8 @@ fn main() {
     let fdsink = gst::ElementFactory::make("fdsink").build().expect("Failed to build fdsink");
     fdsink.set_property("fd", 1);
 
+    mpegtsmux.set_property("alignment", 7);
+
     let pipeline = gst::Pipeline::new();
     pipeline.add_many(&[
         // &videotestsrc,
@@ -139,8 +152,8 @@ fn main() {
         &jpegdec,
         &videoconvert,
         &x264enc,
-        // &video_queue,
-        // &klv_queue,
+        &video_queue,
+        &klv_queue,
         &klv_appsrc.upcast_ref(),
         &mpegtsmux,
         &udpsink,
@@ -156,16 +169,16 @@ fn main() {
         &jpegdec,
         &videoconvert,
         &x264enc,
-        // &video_queue,
+        &video_queue,
         &mpegtsmux,
         // &fdsink,
         // &fakesink,
     ])
     .expect("failed to link_many");
     
-    // klv_appsrc.link(&klv_queue).expect("Failed to link klv_appsrc to klv_queue element");
-    // klv_queue.link_filtered(&mpegtsmux, &klv_caps).expect("Failed to link klv_queue to mpegtsmux element");
-    klv_appsrc.link_filtered(&mpegtsmux, &klv_caps).expect("Failed to link klvsrc to mpegtsmux element"); // without queue in between
+    klv_appsrc.link(&klv_queue).expect("Failed to link klv_appsrc to klv_queue element");
+    klv_queue.link(&mpegtsmux).expect("Failed to link klv_queue to mpegtsmux element");
+    // klv_appsrc.link(&mpegtsmux).expect("Failed to link klvsrc to mpegtsmux element"); // without queue in between
     mpegtsmux.link(&udpsink).expect("Failed to link mpegtsmux to udpsink");
 
     // Create start time segment - tells gstreamer that we're starting at 0
@@ -173,6 +186,8 @@ fn main() {
     formatted_segment.set_format(gst::Format::Time);
     formatted_segment.set_start(gst::ClockTime::from_seconds(0)); // start playing from this time
     formatted_segment.set_time(gst::ClockTime::from_seconds(0)); // set the current time
+    formatted_segment.set_stop(gst::ClockTime::from_seconds(10));
+    formatted_segment.set_duration(gst::ClockTime::from_seconds(10));
 
     let segment = gst::event::Segment::new(&formatted_segment);
 
