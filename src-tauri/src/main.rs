@@ -37,9 +37,12 @@ fn timestamp_buffer(buffer: &mut gst::Buffer, data: &Vec<u8>){
     let pts = gst::ClockTime::from_mseconds(now.as_millis() as u64);
     // let pts = gst::ClockTime::from_mseconds(now);
     buffer.set_pts(pts);
-    buffer.set_dts(pts + gst::ClockTime::from_mseconds(BUFFER_DURATION_MS));
-    // buffer.set_dts(pts);
-    buffer.set_duration(gst::ClockTime::from_mseconds(BUFFER_DURATION_MS));
+    buffer.set_dts(pts);
+    buffer.set_duration(pts);
+    buffer.set_offset(now.as_millis() as u64);
+
+    // buffer.set_dts(pts + gst::ClockTime::from_mseconds(BUFFER_DURATION_MS));
+    // buffer.set_duration(gst::ClockTime::from_mseconds(BUFFER_DURATION_MS));
 }
 
 #[tauri::command]
@@ -69,8 +72,10 @@ fn send_packet(state: State<AppSharedState>, image_arr: Vec<u8>) {
 }
 
 fn main() {
+    // See here: https://stackoverflow.com/questions/64983204/merge-two-appsrc-pipelines-into-1-mpeg-ts-stream
 
     env::set_var("RUST_BACKTRACE", "1");
+    // env::set_var("GST_DEBUG", "*:WARN,*:ERROR");
     env::set_var("GST_DEBUG", "0");
 
     // SETUP
@@ -104,9 +109,11 @@ fn main() {
     klv_appsrc.set_caps(Some(&klv_caps));
 
     video_appsrc.set_is_live(true);
+    video_appsrc.set_format(gst::Format::Time);
+
     klv_appsrc.set_is_live(true);
-    println!("VIDEO IS LIVE: {}", video_appsrc.is_live());
-    println!("KLV IS LIVE: {}", klv_appsrc.is_live());
+    klv_appsrc.set_format(gst::Format::Time);
+
 
     // video_appsrc.set_handle_segment_change(true);
     // klv_appsrc.set_handle_segment_change(true);
@@ -132,9 +139,11 @@ fn main() {
     let mpegtsmux = gst::ElementFactory::make("mpegtsmux").build().expect("failed to build mpegtsmux");
     let udpsink = gst::ElementFactory::make("udpsink").build().expect("failed to build udpsink");
     let fakesink = gst::ElementFactory::make("fakesink").build().expect("failed to build fakesink");
+    let identity = gst::ElementFactory::make("identity").build().expect("failed to build identity element");
 
     udpsink.set_property_from_str("host", "239.0.0.1");
     udpsink.set_property_from_str("port", "8001");
+    udpsink.set_property("sync", false);
 
     fakesink.set_property_from_str("sync", "false");
     fakesink.set_property_from_str("dump", "true");
@@ -142,7 +151,12 @@ fn main() {
     let fdsink = gst::ElementFactory::make("fdsink").build().expect("Failed to build fdsink");
     fdsink.set_property("fd", 1);
 
+    identity.set_property("silent", false);
+    identity.set_property("check-imperfect-timestamp", true);
+    identity.set_property("check-imperfect-offset", true);
+
     mpegtsmux.set_property("alignment", 7);
+
 
     let pipeline = gst::Pipeline::new();
     pipeline.add_many(&[
@@ -155,6 +169,7 @@ fn main() {
         &video_queue,
         &klv_queue,
         &klv_appsrc.upcast_ref(),
+        // &identity,
         &mpegtsmux,
         &udpsink,
         // &fakesink,
@@ -169,16 +184,18 @@ fn main() {
         &jpegdec,
         &videoconvert,
         &x264enc,
-        &video_queue,
+        // &video_queue,
         &mpegtsmux,
         // &fdsink,
         // &fakesink,
     ])
     .expect("failed to link_many");
     
-    klv_appsrc.link(&klv_queue).expect("Failed to link klv_appsrc to klv_queue element");
-    klv_queue.link(&mpegtsmux).expect("Failed to link klv_queue to mpegtsmux element");
-    // klv_appsrc.link(&mpegtsmux).expect("Failed to link klvsrc to mpegtsmux element"); // without queue in between
+    // klv_appsrc.link(&klv_queue).expect("Failed to link klv_appsrc to klv_queue element");
+    // klv_queue.link(&mpegtsmux).expect("Failed to link klv_queue to mpegtsmux element");
+    // klv_appsrc.link(&identity).expect("Failed to link klv appsrc to identity");
+    // identity.link(&mpegtsmux).expect("Failed to link identity to mpegtsmux");
+    klv_appsrc.link(&mpegtsmux).expect("Failed to link klvsrc to mpegtsmux element"); // without queue in between
     mpegtsmux.link(&udpsink).expect("Failed to link mpegtsmux to udpsink");
 
     // Create start time segment - tells gstreamer that we're starting at 0
