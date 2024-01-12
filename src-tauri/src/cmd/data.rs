@@ -3,10 +3,38 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use rand::Rng;
 use tauri::State;
 use gstreamer as gst;
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+#[allow(non_snake_case)]
+pub struct Metadata {
+    precisionTimeStamp: u64,
+    missionID: String,
+    platformTailNumber: String,
+    platformHeadingAngle: f64,
+    platformPitchAngle: f64,
+    platformRollAngle: f64,
+    platformTrueAirSpeed: f64,
+    platformIndicatedAirSpeed: f64,
+    platformDesignation: String,
+    imageSourceSensor: String,
+    imageCoordinateSystem: String,
+    sensorLatitude: f64,
+    sensorLongitude: f64,
+    sensorAltitude: f64,
+    frameCenterLatitude: f64,
+    frameCenterLongitude: f64,
+    frameCenterAltitude: f64,
+    sensorRelativeAzimuthAngle: f64,
+    sensorRelativeElevationAngle: f64,
+    sensorRelativeRollAngle: f64,
+    hfov: f64,
+    vfov: f64,
+}
 
 #[tauri::command]
-pub fn send_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>) {
-
+pub fn send_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>, metadata: Metadata) {
+    println!("{:?}", metadata);
     let klv = generate_fake_klv_data(32);
 
     let video_appsrc = state.video_appsrc.lock().unwrap();

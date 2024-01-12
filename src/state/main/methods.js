@@ -101,11 +101,12 @@ const methods = {
         
         this.state.map.canvas.toBlob(blob => {
             const reader = new FileReader();
+            const metadata = this.getters.getMetadata();
 
             reader.onload = async function(){
                 const arrayBuffer = reader.result;
                 const data = Array.from(new Uint8Array(arrayBuffer));
-                await invoke("send_packet", {imageArr: data});
+                await invoke("send_packet", {imageArr: data, metadata: metadata});
             }
             reader.readAsArrayBuffer(blob);
         }, "image/jpeg", imageQuality);
