@@ -24,27 +24,27 @@ const getters = {
     },
 
     getFov(){
-        /* TODO: This calculation of FOV appears to be incorrect and doesn't respond to changes in "zoom". Use another method with corner points, altitude, etc. */
         const camera = this.state.map?.camera;
         if(!camera) return;
+        const imageDimensions = this.state.imageDimensions;
 
-        const frustum = camera.frustum;
-        const fov = frustum.fov;
-        const aspectRatio = frustum.aspectRatio;
+        const tl = this.getters.getCoordinateAtPixel({x: 0, y: 0});
+        const br = this.getters.getCoordinateAtPixel({x: window.innerWidth, y: window.innerHeight});
+        if(!tl || !br) return {hfov: 0.0, vfov: 0.0}; // note that this means FOV is nullified if the camera looks beyond the horizon.
 
-        let hfov, vfov;
+        const tlCartesian = Cesium.Cartesian3.fromDegrees(tl.lng, tl.lat, tl.alt);
+        const brCartesian = Cesium.Cartesian3.fromDegrees(br.lng, br.lat, br.alt);
 
-        if(aspectRatio >= 1 ) {
-            hfov = fov;
-            vfov = 2 * Math.atan(Math.tan(fov / 2) * aspectRatio);
-        } else {
-            vfov = fov;
-            hfov = 2 * Math.atan(Math.tan(fov / 2) * aspectRatio);
-        }
+        const distance = Cesium.Cartesian3.distance(tlCartesian, brCartesian);
+        const cameraAlt = camera.positionCartographic.height;
 
-        hfov = Cesium.Math.toDegrees(hfov);
-        vfov = Cesium.Math.toDegrees(vfov);
+        const diagonalFOV = 2 * Math.atan((distance / 2) / cameraAlt);
 
+        const aspectRatio = imageDimensions.width / imageDimensions.height;
+
+        let hfov = 2 * Math.atan(Math.tan(diagonalFOV / 2) * aspectRatio);
+        let vfov = 2 * Math.atan(Math.tan(diagonalFOV / 2) / aspectRatio);
+        
         return {hfov, vfov};
     },
 
@@ -60,30 +60,30 @@ const getters = {
             missionID: "ABC123",
             platformTailNumber: "NTR42",
 
-            platformHeadingAngle: aircraft.heading,
-            platformPitchAngle: aircraft.pitch,
-            platformRollAngle: 0.0,
-            platformTrueAirSpeed: aircraft.velocity,
+            // platformHeadingAngle: aircraft.heading,
+            // platformPitchAngle: aircraft.pitch,
+            // platformRollAngle: 0.0,
+            // platformTrueAirSpeed: aircraft.velocity,
 
-            platformIndicatedAirSpeed: aircraft.velocity,
+            // platformIndicatedAirSpeed: aircraft.velocity,
             platformDesignation: "tauri",
             imageSourceSensor: "gimbal_sim",
-            imageCoordinateSystem: "CRS:4326",
+            imageCoordinateSystem: "EPSG:4326",
 
             sensorLatitude: position.lat,
-            sensorLongitude: position.lng,
-            sensorAltitude: position.alt,
+            // sensorLongitude: position.lng,
+            // sensorAltitude: position.alt,
 
-            frameCenterLatitude: frameCenter?.lat ?? 0.0,
-            frameCenterLongitude: frameCenter?.lng ?? 0.0,
-            frameCenterAltitude: frameCenter?.alt ?? 0.0,
+            // frameCenterLatitude: frameCenter?.lat ?? 0.0,
+            // frameCenterLongitude: frameCenter?.lng ?? 0.0,
+            // frameCenterAltitude: frameCenter?.alt ?? 0.0,
 
-            sensorRelativeAzimuthAngle: gimbal.heading, // note this is not relative right now and needs to be fixed
-            sensorRelativeElevationAngle: gimbal.pitch, // note this is not relative right now and needs to be fixed
-            sensorRelativeRollAngle: 0.0,
+            // sensorRelativeAzimuthAngle: gimbal.heading, // note this is not relative right now and needs to be fixed
+            // sensorRelativeElevationAngle: gimbal.pitch, // note this is not relative right now and needs to be fixed
+            // sensorRelativeRollAngle: 0.0,
 
-            hfov: fov?.hfov ?? 0.0,
-            vfov: fov?.vfov ?? 0.0,
+            // hfov: fov?.hfov ?? 0.0,
+            // vfov: fov?.vfov ?? 0.0,
 
         }
 
