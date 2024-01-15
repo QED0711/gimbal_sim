@@ -4,6 +4,7 @@
 
 mod utils;
 mod cmd;
+mod klv;
 
 use std::{ sync::{Arc, Mutex}, env};
 use gstreamer as gst;
