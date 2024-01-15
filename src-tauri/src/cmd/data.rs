@@ -16,11 +16,11 @@ pub struct Metadata {
     pub missionID: String, // 3
     pub platformTailNumber: String, // 4
 
-    // platformHeadingAngle: KlvUInt16, // 5
-    // platformPitchAngle: KlvInt16, // 6
-    // platformRollAngle: KlvInt16, // 7
+    pub platformHeadingAngle: f64, // 5
+    pub platformPitchAngle: f64, // 6
+    pub platformRollAngle: f64, // 7
+    pub platformTrueAirSpeed: u8, // 8
 
-    // platformTrueAirSpeed: KlvUInt8, // 8
     // platformIndicatedAirSpeed: KlvUInt8, // 9
 
     pub platformDesignation: String, // 10

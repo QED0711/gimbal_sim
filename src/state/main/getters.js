@@ -60,10 +60,10 @@ const getters = {
             missionID: "ABC123",
             platformTailNumber: "NTR42",
 
-            // platformHeadingAngle: aircraft.heading,
-            // platformPitchAngle: aircraft.pitch,
-            // platformRollAngle: 0.0,
-            // platformTrueAirSpeed: aircraft.velocity,
+            platformHeadingAngle: aircraft.heading,
+            platformPitchAngle: aircraft.pitch,
+            platformRollAngle: 0.0,
+            platformTrueAirSpeed: Math.round(aircraft.velocity),
 
             // platformIndicatedAirSpeed: aircraft.velocity,
             platformDesignation: "tauri",
