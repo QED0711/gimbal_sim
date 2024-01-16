@@ -28,16 +28,19 @@ pub struct Metadata {
     pub imageCoordinateSystem: String,
 
     pub sensorLatitude: f64, // 13
-    // sensorLongitude: KlvFloat, // 14
-    // sensorAltitude: KlvUInt16, // 15
+    pub sensorLongitude: f64, // 14
+    pub sensorTrueAltitude: f64, // 15
+
+    pub hfov: f64,
+    pub vfov: f64,
+
+    pub sensorRelativeAzimuthAngle: f64,
+    pub sensorRelativeElevationAngle: f64,
+    pub sensorRelativeRollAngle: f64,
+
     // frameCenterLatitude: KlvFloat,
     // frameCenterLongitude: KlvFloat,
     // frameCenterAltitude: KlvFloat,
-    // sensorRelativeAzimuthAngle: KlvFloat,
-    // sensorRelativeElevationAngle: KlvFloat,
-    // sensorRelativeRollAngle: KlvFloat,
-    // hfov: KlvFloat,
-    // vfov: KlvFloat,
 }
 
 
@@ -47,6 +50,7 @@ pub fn send_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>, meta
     // let klv = generate_fake_klv_data(32);
     let klv_metadata = MISB601::Klv::from(metadata);
     let klv = klv_metadata.encode_to_klv();
+    println!("KLV Length: {}", klv.len());
 
     let video_appsrc = state.video_appsrc.lock().unwrap();
     let klv_appsrc = state.klv_appsrc.lock().unwrap();

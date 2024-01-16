@@ -71,19 +71,21 @@ const getters = {
             imageCoordinateSystem: "EPSG:4326",
 
             sensorLatitude: position.lat,
-            // sensorLongitude: position.lng,
-            // sensorAltitude: position.alt,
+            sensorLongitude: position.lng,
+            sensorTrueAltitude: position.alt,
+
+            hfov: fov?.hfov ?? 0.0,
+            vfov: fov?.vfov ?? 0.0,
+
+            sensorRelativeAzimuthAngle: gimbal.heading, // note this is not relative right now and needs to be fixed
+            sensorRelativeElevationAngle: gimbal.pitch, // note this is not relative right now and needs to be fixed
+            sensorRelativeRollAngle: 0.0,
 
             // frameCenterLatitude: frameCenter?.lat ?? 0.0,
             // frameCenterLongitude: frameCenter?.lng ?? 0.0,
             // frameCenterAltitude: frameCenter?.alt ?? 0.0,
 
-            // sensorRelativeAzimuthAngle: gimbal.heading, // note this is not relative right now and needs to be fixed
-            // sensorRelativeElevationAngle: gimbal.pitch, // note this is not relative right now and needs to be fixed
-            // sensorRelativeRollAngle: 0.0,
 
-            // hfov: fov?.hfov ?? 0.0,
-            // vfov: fov?.vfov ?? 0.0,
 
         }
 

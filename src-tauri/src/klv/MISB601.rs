@@ -1,3 +1,5 @@
+use std::convert;
+
 /* NOTE: MISB601 Standards encoded per this document: https://upload.wikimedia.org/wikipedia/commons/1/19/MISB_Standard_0601.pdf */
 use crate::cmd::data::Metadata;
 
@@ -11,6 +13,16 @@ pub enum KlvField {
     PlatformTrueAirSpeed(u8),
 
     SensorLatitude(f64),
+    SensorLongitude(f64),
+    SensorTrueAltitude(f64),
+
+    SensorFOV(f64), // covers both hfov and vfov
+
+    SensorRelativeAzimuthAngle(f64),
+    SensorRelativeElevationAngle(f64),
+    SensorRelativeRollAngle(f64),
+
+
 }
 
 
@@ -71,7 +83,50 @@ impl KlvEncode for KlvField {
                 let val_bytes = converted.to_be_bytes();
                 KlvField::populate(&mut klv, &val_bytes);
             }
-            _ => {} // placeholder that does nothing. This should be remove to check for compliance
+            KlvField::SensorLongitude(mut val) => {
+                if val < -180.0 || val > 180.0 { val = 0.0 }
+                let scaling_factor = (2u32.pow(31) - 1) as f64 / 180.0;
+                let converted = (val * scaling_factor).round() as i32;
+                let val_bytes = converted.to_be_bytes();
+                KlvField::populate(&mut klv, &val_bytes);
+            }
+            KlvField::SensorTrueAltitude(mut val) => {
+                if val < -900.0 || val > 19_000.0 { val = 0.0 }
+                let scale = 65535.0 / 19_900.0;
+                let offset = -900.0 * scale;
+                let converted = (val * scale + offset).round() as u16;
+                let val_bytes = converted.to_be_bytes();
+                KlvField::populate(&mut klv, &val_bytes)
+            }
+            KlvField::SensorFOV(mut val) => {
+                if val < 0.0 || val > 180.0 { val = 0.0 }
+                let scaling_factor = u16::MAX as f64 / 180.0;
+                let converted = (val * scaling_factor).round() as u16;
+                let val_bytes = converted.to_be_bytes();
+                KlvField::populate(&mut klv, &val_bytes);
+            }
+            KlvField::SensorRelativeAzimuthAngle(mut val) => {
+                if val < 0.0 || val > 360.0 { val = 0.0 }
+                let scaling_factor = u32::MAX as f64 / 360.0;
+                let converted = (val * scaling_factor).round() as u32;
+                let val_bytes = converted.to_be_bytes();
+                KlvField::populate(&mut klv, &val_bytes);
+            }
+            KlvField::SensorRelativeElevationAngle(mut val) => {
+                if val < -180.0 || val > 180.0 { val = 0.0 }
+                let scaling_factor = (2u32.pow(31) - 1) as f64 / 180.0;
+                let converted = (val * scaling_factor).round() as i32;
+                let val_bytes = converted.to_be_bytes();
+                KlvField::populate(&mut klv, &val_bytes);
+            }
+            KlvField::SensorRelativeRollAngle(mut val) => {
+                if val < 0.0 || val > 360.0 { val = 0.0 } 
+                let scaling_factor = (u32::MAX as f64) / 360.0;
+                let converted = (val * scaling_factor).round() as u32;
+                let val_bytes = converted.to_be_bytes();
+                KlvField::populate(&mut klv, &val_bytes);
+            }
+            _ => {} // placeholder that does nothing. This should be removed to check for completeness
         }
 
         return klv;
@@ -94,7 +149,16 @@ pub struct Klv {
     pub platformRollAngle: KlvField, // 7
     pub platformTrueAirSpeed: KlvField, // 9
 
-    pub sensorLatitude: KlvField,
+    pub sensorLatitude: KlvField, // 13
+    pub sensorLongitude: KlvField, // 14
+    pub sensorTrueAltitude: KlvField, // 15
+
+    pub sensorHFov: KlvField,
+    pub sensorVFov: KlvField,
+
+    pub sensorRelativeAzimuthAngle: KlvField,
+    pub sensorRelativeElevationAngle: KlvField,
+    pub sensorRelativeRollAngle: KlvField,
 }
 
 
@@ -116,29 +180,63 @@ impl Klv {
             imageCoordinateSystem: KlvField::GenericString(json.imageCoordinateSystem),
 
             sensorLatitude: KlvField::SensorLatitude(json.sensorLatitude),
+            sensorLongitude: KlvField::SensorLongitude(json.sensorLongitude),
+            sensorTrueAltitude: KlvField::SensorTrueAltitude(json.sensorTrueAltitude),
+
+            sensorHFov: KlvField::SensorFOV(json.hfov), // both hfov and vfov have the same transformation applied, and so they can use the same enum
+            sensorVFov: KlvField::SensorFOV(json.vfov),
+
+            sensorRelativeAzimuthAngle: KlvField::SensorRelativeAzimuthAngle(json.sensorRelativeAzimuthAngle),
+            sensorRelativeElevationAngle: KlvField::SensorRelativeElevationAngle(json.sensorRelativeElevationAngle),
+            sensorRelativeRollAngle: KlvField::SensorRelativeRollAngle(json.sensorRelativeRollAngle),
         }
+
+
+    }
+    
+    fn calc_checksum(klv: &Vec<u8>) -> u16 {
+        let mut sum: u32 = 0;
+        for &byte in klv {
+            sum = (sum + byte as u32) % 65536;
+        }
+        sum as u16
     }
 
     pub fn encode_to_klv(&self) -> Vec<u8> {
         let mut klv_data = Vec::new();
 
-        let universal_key = [0u8; 16];
+        let universal_key = [0x06, 0x0E, 0x2B, 0x34, 0x02, 0x0B, 0x01, 0x01, 0x0E, 0x01, 0x03, 0x01, 0x01, 0x00, 0x00, 0x00];
         klv_data.extend_from_slice(&universal_key);
 
         klv_data.extend(self.precisionTimeStamp.to_klv(2));
         klv_data.extend(self.missionID.to_klv(3));
         klv_data.extend(self.platformTailNumber.to_klv(4));
 
-        klv_data.extend(self.platformHeadingAngle.to_klv(4));
-        klv_data.extend(self.platformPitchAngle.to_klv(5));
-        klv_data.extend(self.platformRollAngle.to_klv(6));
-        klv_data.extend(self.platformTrueAirSpeed.to_klv(7));
+        klv_data.extend(self.platformHeadingAngle.to_klv(5));
+        klv_data.extend(self.platformPitchAngle.to_klv(6));
+        klv_data.extend(self.platformRollAngle.to_klv(7));
+        klv_data.extend(self.platformTrueAirSpeed.to_klv(8));
 
         klv_data.extend(self.platformDesignation.to_klv(10));
         klv_data.extend(self.imageSourceSensor.to_klv(11));
         klv_data.extend(self.imageCoordinateSystem.to_klv(12));
         
         klv_data.extend(self.sensorLatitude.to_klv(13));
+        klv_data.extend(self.sensorLongitude.to_klv(14));
+        klv_data.extend(self.sensorTrueAltitude.to_klv(15));
+
+        klv_data.extend(self.sensorHFov.to_klv(16));
+        klv_data.extend(self.sensorVFov.to_klv(17));
+
+        klv_data.extend(self.sensorRelativeAzimuthAngle.to_klv(18));
+        klv_data.extend(self.sensorRelativeElevationAngle.to_klv(19));
+        klv_data.extend(self.sensorRelativeRollAngle.to_klv(20));
+
+        // Checksum (this portion must go at the end of the packet construction)
+        klv_data.push(0x01); // checksum key
+        klv_data.push(0x02); // checksum length (2 bytes)
+        let checksum = Klv::calc_checksum(&klv_data);
+        klv_data.extend_from_slice(&checksum.to_be_bytes());
 
         // klv_data.extend(self.precisionTimeStamp.to_klv(1));
         // klv_data.extend(self.missionID.to_klv(2));
@@ -149,8 +247,6 @@ impl Klv {
         // klv_data.extend(self.imageCoordinateSystem.to_klv(11));
 
         // klv_data.extend(self.sensorLatitude.to_klv(13));
-        // klv_data.extend(self.sensorLongitude.to_klv(14));
-        // klv_data.extend(self.sensorAltitude.to_klv(15));
 
         // klv_data.extend(self.frameCenterLatitude.to_klv(15));
         // klv_data.extend(self.frameCenterLongitude.to_klv(16));
