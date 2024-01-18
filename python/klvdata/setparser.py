@@ -23,6 +23,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import pdb
 from pprint import pformat
 from abc import ABCMeta
 from abc import abstractmethod
@@ -61,6 +62,7 @@ class SetParser(Element, metaclass=ABCMeta):
         for key, value in KLVParser(self.value, self.key_length):
             try:
                 self.items[key] = self.parsers[key](value)
+                # print(key, value)
             except (KeyError, TypeError):
                 self.items[key] = self._unknown_element(key, value)
             except ValueError:
@@ -110,6 +112,7 @@ class SetParser(Element, metaclass=ABCMeta):
             for item in items:
                 try:
                     metadata[item.TAG] = (item.LDSName, item.ESDName, item.UDSName, str(item.value.value))
+                    # print("\n\n\nITEM", item.LDSName, item)
                 except:
                     None
                 if hasattr(item, 'items'):

@@ -254,69 +254,62 @@ impl Klv {
     }
 
     pub fn encode_to_klv(&self) -> Vec<u8> {
-        let mut klv_data = Vec::new();
 
-        let universal_key = [
+        let mut body: Vec<u8> = Vec::new();
+
+        body.extend(self.precisionTimeStamp.to_klv(2));
+        body.extend(self.missionID.to_klv(3));
+        body.extend(self.platformTailNumber.to_klv(4));
+
+        body.extend(self.platformHeadingAngle.to_klv(5));
+        body.extend(self.platformPitchAngle.to_klv(6));
+        body.extend(self.platformRollAngle.to_klv(7));
+        body.extend(self.platformTrueAirSpeed.to_klv(8));
+
+        body.extend(self.platformDesignation.to_klv(10));
+        body.extend(self.imageSourceSensor.to_klv(11));
+        body.extend(self.imageCoordinateSystem.to_klv(12));
+
+        body.extend(self.sensorLatitude.to_klv(13));
+        body.extend(self.sensorLongitude.to_klv(14));
+        body.extend(self.sensorTrueAltitude.to_klv(15));
+
+        body.extend(self.sensorHFov.to_klv(16));
+        body.extend(self.sensorVFov.to_klv(17));
+
+        body.extend(self.sensorRelativeAzimuthAngle.to_klv(18));
+        body.extend(self.sensorRelativeElevationAngle.to_klv(19));
+        body.extend(self.sensorRelativeRollAngle.to_klv(20));
+
+        body.extend(self.frameCenterLatitude.to_klv(23));
+        body.extend(self.frameCenterLongitude.to_klv(24));
+        body.extend(self.frameCenterAltitude.to_klv(25));
+
+        body.extend(self.uasLocalSetVersionNumber.to_klv(65));
+
+        let body_length = body.len() + 4; // add 4 because the checksum still needs to be added with 1 byte for the key, 1 for the length, and 2 for the value
+        let mut packet_header: Vec<u8> = vec![
             0x06, 0x0E, 0x2B, 0x34, 0x02, 0x0B, 0x01, 0x01, 0x0E, 0x01, 0x03, 0x01, 0x01, 0x00,
             0x00, 0x00,
         ];
-        klv_data.extend_from_slice(&universal_key);
+        if body_length < 128 {
+            packet_header.push(body_length as u8);
+        } else {
+            let length_bytes = body_length.to_be_bytes();
+            let significant_bytes = length_bytes.iter().skip_while(|&&x| x == 0).count();
+            packet_header.push(0x80 | significant_bytes as u8);
+            for &byte in length_bytes.iter().rev().take(significant_bytes) { packet_header.push(byte) }
+        }
 
-        klv_data.extend(self.precisionTimeStamp.to_klv(2));
-        klv_data.extend(self.missionID.to_klv(3));
-        klv_data.extend(self.platformTailNumber.to_klv(4));
-
-        klv_data.extend(self.platformHeadingAngle.to_klv(5));
-        klv_data.extend(self.platformPitchAngle.to_klv(6));
-        klv_data.extend(self.platformRollAngle.to_klv(7));
-        klv_data.extend(self.platformTrueAirSpeed.to_klv(8));
-
-        klv_data.extend(self.platformDesignation.to_klv(10));
-        klv_data.extend(self.imageSourceSensor.to_klv(11));
-        klv_data.extend(self.imageCoordinateSystem.to_klv(12));
-
-        klv_data.extend(self.sensorLatitude.to_klv(13));
-        klv_data.extend(self.sensorLongitude.to_klv(14));
-        klv_data.extend(self.sensorTrueAltitude.to_klv(15));
-
-        klv_data.extend(self.sensorHFov.to_klv(16));
-        klv_data.extend(self.sensorVFov.to_klv(17));
-
-        klv_data.extend(self.sensorRelativeAzimuthAngle.to_klv(18));
-        klv_data.extend(self.sensorRelativeElevationAngle.to_klv(19));
-        klv_data.extend(self.sensorRelativeRollAngle.to_klv(20));
-
-        klv_data.extend(self.frameCenterLatitude.to_klv(23));
-        klv_data.extend(self.frameCenterLongitude.to_klv(24));
-        klv_data.extend(self.frameCenterAltitude.to_klv(25));
-
-        klv_data.extend(self.uasLocalSetVersionNumber.to_klv(65));
+        let mut klv_data: Vec<u8> = Vec::new();
+        klv_data.extend(packet_header);
+        klv_data.extend(body);
 
         // Checksum (this portion must go at the end of the packet construction)
         klv_data.push(0x01); // checksum key
         klv_data.push(0x02); // checksum length (2 bytes)
         let checksum = Klv::calc_checksum(&klv_data);
         klv_data.extend_from_slice(&checksum.to_be_bytes());
-
-        // klv_data.extend(self.precisionTimeStamp.to_klv(1));
-        // klv_data.extend(self.missionID.to_klv(2));
-        // klv_data.extend(self.platformTailNumber.to_klv(3));
-        // klv_data.extend(self.platformIndicatedAirSpeed.to_klv(8));
-        // klv_data.extend(self.platformDesignation.to_klv(9));
-        // klv_data.extend(self.imageSourceSensor.to_klv(10));
-        // klv_data.extend(self.imageCoordinateSystem.to_klv(11));
-
-        // klv_data.extend(self.sensorLatitude.to_klv(13));
-
-        // klv_data.extend(self.frameCenterLatitude.to_klv(15));
-        // klv_data.extend(self.frameCenterLongitude.to_klv(16));
-        // klv_data.extend(self.frameCenterAltitude.to_klv(17));
-        // klv_data.extend(self.sensorRelativeAzimuthAngle.to_klv(18));
-        // klv_data.extend(self.sensorRelativeElevationAngle.to_klv(19));
-        // klv_data.extend(self.sensorRelativeRollAngle.to_klv(20));
-
-        // klv_data.extend(self.hfov.to_klv(16));
-        // klv_data.extend(self.vfov.to_klv(17));
 
         klv_data
     }

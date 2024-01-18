@@ -26,7 +26,7 @@
 from klvdata.element import UnknownElement
 
 from klvdata.klvparser import KLVParser
-
+import pdb
 
 class StreamParser:
     parsers = {}
@@ -42,7 +42,7 @@ class StreamParser:
 
     def __next__(self):
         key, value = next(self.iter_stream)
-
+        pdb.set_trace()
         if key in self.parsers:
             return self.parsers[key](value)
         else:

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import pdb
 # -*- coding: utf-8 -*-
 
 # The MIT License (MIT)
@@ -54,7 +55,7 @@ class KLVParser(object):
             length = bytes_to_int(self.__read(byte_length - 128))
 
         value = self.__read(length)
-
+        pdb.set_trace()
         return key, value
 
     def __read(self, size):
@@ -62,8 +63,14 @@ class KLVParser(object):
             return b''
 
         assert size > 0
+        # DZYNE ADDITION:
+        # commented line below out and replaced with try block
 
-        data = self.source.read(size)
+        # data = self.source.read(size)
+        try:
+            data = self.source.read(size)
+        except:
+            return None
 
         if data:
             return data
