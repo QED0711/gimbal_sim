@@ -9,7 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "create-state": "node ./node_modules/spiccato/cli.js --root=src/state"
+    "create-state": "node ./node_modules/spiccato/cli.js --root=src/state",
+    "test-klv": "python3 ./python/klvdata_test.py "
   },
   "dependencies": {
     "@tauri-apps/api": "^1.5.1",

@@ -81,9 +81,9 @@ const getters = {
             sensorRelativeElevationAngle: gimbal.pitch, // note this is not relative right now and needs to be fixed
             sensorRelativeRollAngle: 0.0,
 
-            // frameCenterLatitude: frameCenter?.lat ?? 0.0,
-            // frameCenterLongitude: frameCenter?.lng ?? 0.0,
-            // frameCenterAltitude: frameCenter?.alt ?? 0.0,
+            frameCenterLatitude: frameCenter?.lat ?? 0.0,
+            frameCenterLongitude: frameCenter?.lng ?? 0.0,
+            frameCenterAltitude: frameCenter?.alt ?? 0.0,
 
 
 

@@ -2,6 +2,9 @@ use crate::klv::MISB601;
 
 use super::super::utils;
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::fs::OpenOptions;
+use std::io::{self, Write};
+use std::env;
 use rand::Rng;
 use tauri::State;
 use gstreamer as gst;
@@ -38,9 +41,9 @@ pub struct Metadata {
     pub sensorRelativeElevationAngle: f64,
     pub sensorRelativeRollAngle: f64,
 
-    // frameCenterLatitude: KlvFloat,
-    // frameCenterLongitude: KlvFloat,
-    // frameCenterAltitude: KlvFloat,
+    pub frameCenterLatitude: f64,
+    pub frameCenterLongitude: f64,
+    pub frameCenterAltitude: f64,
 }
 
 
@@ -50,7 +53,12 @@ pub fn send_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>, meta
     // let klv = generate_fake_klv_data(32);
     let klv_metadata = MISB601::Klv::from(metadata);
     let klv = klv_metadata.encode_to_klv();
-    println!("KLV Length: {}", klv.len());
+    let file_path = env::current_dir().unwrap().into_os_string().into_string().unwrap();
+    let file_path  = format!("{}/../python/klv_raw.bin", file_path);
+
+    append_to_file(&file_path, &klv);
+    println!("{:?}", klv);
+    panic!("Exiting early");
 
     let video_appsrc = state.video_appsrc.lock().unwrap();
     let klv_appsrc = state.klv_appsrc.lock().unwrap();
@@ -86,6 +94,18 @@ fn timestamp_buffer(buffer: &mut gst::Buffer, data: &Vec<u8>){
     // buffer.set_duration(gst::ClockTime::from_mseconds(BUFFER_DURATION_MS));
 }
 
+
+fn append_to_file(file_path: &str, data: &Vec<u8>) {
+    let mut file = OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(file_path)
+        .expect("failed to open file");
+
+    file.write_all(data)
+        .expect("Failed to write to file");
+
+}
 
 fn generate_fake_klv_data(value_length: usize) -> Vec<u8> {
     let mut rng = rand::thread_rng();
