@@ -55,7 +55,7 @@ class KLVParser(object):
             length = bytes_to_int(self.__read(byte_length - 128))
 
         value = self.__read(length)
-        pdb.set_trace()
+        # pdb.set_trace()
         return key, value
 
     def __read(self, size):

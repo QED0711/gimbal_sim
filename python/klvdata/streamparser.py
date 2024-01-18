@@ -42,7 +42,7 @@ class StreamParser:
 
     def __next__(self):
         key, value = next(self.iter_stream)
-        pdb.set_trace()
+        # pdb.set_trace()
         if key in self.parsers:
             return self.parsers[key](value)
         else:
