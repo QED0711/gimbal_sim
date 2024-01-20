@@ -3,6 +3,7 @@ use std::convert;
 /* NOTE: MISB601 Standards encoded per this document: https://upload.wikimedia.org/wikipedia/commons/1/19/MISB_Standard_0601.pdf */
 use crate::cmd::data::Metadata;
 
+#[derive(Debug)]
 pub enum KlvField {
     GenericString(String),
     PrecisionTimeStamp(u64),
@@ -166,7 +167,7 @@ impl KlvEncode for KlvField {
             }
             _ => {} // placeholder that does nothing. This should be removed to check for completeness
         }
-        println!("{:?}", klv);
+        // println!("{:?}", klv);
         return klv;
     }
 }

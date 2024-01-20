@@ -24,8 +24,6 @@ pub struct Metadata {
     pub platformRollAngle: f64, // 7
     pub platformTrueAirSpeed: u8, // 8
 
-    // platformIndicatedAirSpeed: KlvUInt8, // 9
-
     pub platformDesignation: String, // 10
     pub imageSourceSensor: String,
     pub imageCoordinateSystem: String,
@@ -49,16 +47,17 @@ pub struct Metadata {
 
 #[tauri::command]
 pub fn send_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>, metadata: Metadata) {
-    // println!("{:?}", metadata);
+    // println!("{:?}, {:?}", metadata.sensorTrueAltitude, metadata.sensorLongitude);
     // let klv = generate_fake_klv_data(32);
+
     let klv_metadata = MISB601::Klv::from(metadata);
     let klv = klv_metadata.encode_to_klv();
-    let file_path = env::current_dir().unwrap().into_os_string().into_string().unwrap();
-    let file_path  = format!("{}/../python/klv_raw.bin", file_path);
 
-    append_to_file(&file_path, &klv);
-    println!("{:?}", klv);
-    panic!("Exiting early");
+    // let file_path = env::current_dir().unwrap().into_os_string().into_string().unwrap();
+    // let file_path  = format!("{}/../python/klv_raw.bin", file_path);
+    // append_to_file(&file_path, &klv);
+    // println!("{:?}", klv);
+    // panic!("Exiting early");
 
     let video_appsrc = state.video_appsrc.lock().unwrap();
     let klv_appsrc = state.klv_appsrc.lock().unwrap();

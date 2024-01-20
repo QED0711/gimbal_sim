@@ -72,7 +72,7 @@ const getters = {
 
             sensorLatitude: position.lat,
             sensorLongitude: position.lng,
-            sensorTrueAltitude: position.alt,
+            sensorTrueAltitude: position.alt, 
 
             hfov: fov?.hfov ?? 0.0,
             vfov: fov?.vfov ?? 0.0,
@@ -84,10 +84,9 @@ const getters = {
             frameCenterLatitude: frameCenter?.lat ?? 0.0,
             frameCenterLongitude: frameCenter?.lng ?? 0.0,
             frameCenterAltitude: frameCenter?.alt ?? 0.0,
-
-
-
         }
+
+        console.log(metadata.sensorTrueAltitude)
 
         return metadata;
     }

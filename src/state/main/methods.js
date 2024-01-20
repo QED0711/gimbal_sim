@@ -67,7 +67,7 @@ const methods = {
         const lat = currentPosition.lat + deltaLatitude,
             lng = currentPosition.lng + deltaLongitude,
             alt = currentPosition.alt + deltaAltitude;
-
+            // console.log(alt)
         await this.setters.setPosition({ lat, lng, alt });
 
         if(this.state.gimbal.isLocked) {

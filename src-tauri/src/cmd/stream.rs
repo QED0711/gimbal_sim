@@ -59,11 +59,14 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, klv_appsrc: &gst_app::App
     let mpegtsmux = gst::ElementFactory::make("mpegtsmux").build().expect("failed to build mpegtsmux");
     let udpsink = gst::ElementFactory::make("udpsink").build().expect("failed to build udpsink");
 
+    x264enc.set_property_from_str("tune", "zerolatency");
+
     mpegtsmux.set_property("alignment", 7);
 
     udpsink.set_property_from_str("host", out_host);
     udpsink.set_property_from_str("port", out_port);
     udpsink.set_property("sync", false);
+    udpsink.set_property("async", false);
 
 
     let pipeline = gst::Pipeline::new();
