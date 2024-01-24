@@ -57,16 +57,16 @@ const getters = {
 
         const metadata = {
             precisionTimeStamp: Date.now(),
-            missionID: "ABC123",
+            missionID: "MISSION_01",
             platformTailNumber: "NTR42",
 
             platformHeadingAngle: aircraft.heading,
-            platformPitchAngle: aircraft.pitch,
+            platformPitchAngle: 0.0, // even if we're reporting a pitch, the relative sensor orientation still assumes 0 pitch in this configuration
             platformRollAngle: 0.0,
             platformTrueAirSpeed: Math.round(aircraft.velocity),
 
             // platformIndicatedAirSpeed: aircraft.velocity,
-            platformDesignation: "tauri",
+            platformDesignation: "TAURI",
             imageSourceSensor: "gimbal_sim",
             imageCoordinateSystem: "EPSG:4326",
 
@@ -86,7 +86,6 @@ const getters = {
             frameCenterAltitude: frameCenter?.alt ?? 0.0,
         }
 
-        console.log(metadata.sensorTrueAltitude)
 
         return metadata;
     }

@@ -81,16 +81,13 @@ fn timestamp_buffer(buffer: &mut gst::Buffer, data: &Vec<u8>){
     let now = SystemTime::now().duration_since(UNIX_EPOCH)
         .expect("Time went backwards");
 
-    // let now = TIMESTAMP_COUNTER.fetch_add(BUFFER_DURATION_MS, Ordering::SeqCst);
     let pts = gst::ClockTime::from_mseconds(now.as_millis() as u64);
-    // let pts = gst::ClockTime::from_mseconds(now);
+
     buffer.set_pts(pts);
     buffer.set_dts(pts);
     buffer.set_duration(pts);
     buffer.set_offset(now.as_millis() as u64);
 
-    // buffer.set_dts(pts + gst::ClockTime::from_mseconds(BUFFER_DURATION_MS));
-    // buffer.set_duration(gst::ClockTime::from_mseconds(BUFFER_DURATION_MS));
 }
 
 
@@ -104,23 +101,4 @@ fn append_to_file(file_path: &str, data: &Vec<u8>) {
     file.write_all(data)
         .expect("Failed to write to file");
 
-}
-
-fn generate_fake_klv_data(value_length: usize) -> Vec<u8> {
-    let mut rng = rand::thread_rng();
-
-    // Generate a fixed 16-byte key (UUID)
-    let key: [u8; 16] = [
-        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-        0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-    ];
-
-    // Generate a random value of the specified length
-    let value: Vec<u8> = (0..value_length).map(|_| rng.gen()).collect();
-
-    // Length field
-    let length: Vec<u8> = vec![value_length as u8];
-
-    // Combine key, length, and value into a single Vec<u8>
-    [key.to_vec(), length, value].concat()
 }
