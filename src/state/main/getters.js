@@ -55,13 +55,16 @@ const getters = {
         const frameCenter = this.getters.getCoordinateAtPixel({}); // defaults to frame center if no pixel given;
         const fov = this.getters.getFov();
 
+        let relativeAzimuth = gimbal.heading - aircraft.heading;
+        relativeAzimuth = relativeAzimuth >= 0 ? relativeAzimuth : relativeAzimuth + 360;
+
         const metadata = {
             precisionTimeStamp: Date.now(),
             missionID: "MISSION_01",
             platformTailNumber: "NTR42",
 
             platformHeadingAngle: aircraft.heading,
-            platformPitchAngle: 0.0, // even if we're reporting a pitch, the relative sensor orientation still assumes 0 pitch in this configuration
+            platformPitchAngle: 0.0, // even if we're reporting a pitch, the relative sensor orientation still assumes 0 pitch in this simulator
             platformRollAngle: 0.0,
             platformTrueAirSpeed: Math.round(aircraft.velocity),
 
@@ -77,8 +80,8 @@ const getters = {
             hfov: fov?.hfov ?? 0.0,
             vfov: fov?.vfov ?? 0.0,
 
-            sensorRelativeAzimuthAngle: gimbal.heading, // note this is not relative right now and needs to be fixed
-            sensorRelativeElevationAngle: gimbal.pitch, // note this is not relative right now and needs to be fixed
+            sensorRelativeAzimuthAngle: relativeAzimuth, 
+            sensorRelativeElevationAngle: gimbal.pitch, 
             sensorRelativeRollAngle: 0.0,
 
             frameCenterLatitude: frameCenter?.lat ?? 0.0,
