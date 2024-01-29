@@ -62,6 +62,8 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, klv_appsrc: &gst_app::App
     x264enc.set_property_from_str("tune", "zerolatency");
 
     mpegtsmux.set_property("alignment", 7);
+    mpegtsmux.set_property("latency", 10 as u64);
+
 
     udpsink.set_property_from_str("host", out_host);
     udpsink.set_property_from_str("port", out_port);
@@ -78,7 +80,7 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, klv_appsrc: &gst_app::App
         &videoconvert,
         &x264enc,
         &video_queue,
-        &klv_queue,
+        // &klv_queue,
         &klv_appsrc.upcast_ref(),
         &mpegtsmux,
         &udpsink,
