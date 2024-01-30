@@ -80,7 +80,7 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, klv_appsrc: &gst_app::App
         &videoconvert,
         &x264enc,
         &video_queue,
-        // &klv_queue,
+        &klv_queue,
         &klv_appsrc.upcast_ref(),
         &mpegtsmux,
         &udpsink,
@@ -93,11 +93,15 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, klv_appsrc: &gst_app::App
         &jpegdec,
         &videoconvert,
         &x264enc,
+        &video_queue,
         &mpegtsmux,
     ])
     .expect("failed to link_many");
 
-    klv_appsrc.link(&mpegtsmux).expect("Failed to link klvsrc to mpegtsmux element"); // without queue in between
+
+    klv_appsrc.link(&klv_queue).expect("Failed to link klvsrc to klv_queue element"); // without queue in between
+    klv_queue.link(&mpegtsmux).expect("failed to link klv_queue to mpegtsmux element");
+    // klv_appsrc.link(&mpegtsmux).expect("Failed to link klvsrc to mpegtsmux element"); // without queue in between
     mpegtsmux.link(&udpsink).expect("Failed to link mpegtsmux to udpsink");
 
     return pipeline;
