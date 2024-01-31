@@ -85,10 +85,14 @@ export default function MapContainer() {
 
     useEffect(() => {
         clearInterval(window._recordingInterval);
+        clearInterval(window._metadataInterval);
         if (record) {
-            window._recordingInterval = setInterval(() => mainManager.methods.sendImage(imageQuality), 1000 / fps);
+            window._recordingInterval = setInterval(() => { mainManager.methods.sendImage(imageQuality) }, 1000 / fps);
+            window._metadataInterval = setInterval(() => { mainManager.methods.sendMetadata() }, (1000 / fps) / 3); // metadata sent at 3 times the rate of video
         }
+
     }, [record, imageQuality, fps]);
+
 
     return (
         <>

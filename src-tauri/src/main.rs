@@ -11,7 +11,7 @@ use gstreamer as gst;
 use gstreamer::prelude::*;
 
 use utils::AppSharedState;
-use cmd::{data::send_packet, stream::{create_video_appsrc, create_klv_appsrc, create_pipeline}};
+use cmd::{data::{send_video_packet, send_metadata_packet}, stream::{create_video_appsrc, create_klv_appsrc, create_pipeline}};
 
 
 fn main() {
@@ -43,7 +43,8 @@ fn main() {
     tauri::Builder::default()
         .manage(shared_state)
         .invoke_handler(tauri::generate_handler![
-            send_packet
+            send_video_packet,
+            send_metadata_packet
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

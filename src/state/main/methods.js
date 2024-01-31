@@ -67,12 +67,12 @@ const methods = {
         const lat = currentPosition.lat + deltaLatitude,
             lng = currentPosition.lng + deltaLongitude,
             alt = currentPosition.alt + deltaAltitude;
-            // console.log(alt)
+        // console.log(alt)
         await this.setters.setPosition({ lat, lng, alt });
 
-        if(this.state.gimbal.isLocked) {
-            const heading = calcHeading({lat, lng, alt}, this.state.gimbal.target);
-            const pitch = calcPitch({lat, lng, alt}, this.state.gimbal.target);
+        if (this.state.gimbal.isLocked) {
+            const heading = calcHeading({ lat, lng, alt }, this.state.gimbal.target);
+            const pitch = calcPitch({ lat, lng, alt }, this.state.gimbal.target);
 
             this.setters.setGimbalHeadingPitch(heading, pitch);
         }
@@ -85,8 +85,8 @@ const methods = {
             const camera = this.state.map.camera;
 
             let heading, pitch;
-                heading = Cesium.Math.toRadians(gimbal.heading);
-                pitch = Cesium.Math.toRadians(gimbal.pitch);
+            heading = Cesium.Math.toRadians(gimbal.heading);
+            pitch = Cesium.Math.toRadians(gimbal.pitch);
 
             camera.lookAt(
                 this.state.entity.position.getValue(),
@@ -96,20 +96,26 @@ const methods = {
         }
     },
 
-    sendImage(imageQuality){
-        if(!this.state.map) return;
-        
+    sendImage(imageQuality) {
+        if (!this.state.map) return;
+
         this.state.map.canvas.toBlob(blob => {
             const reader = new FileReader();
-            const metadata = this.getters.getMetadata();
 
-            reader.onload = async function(){
+            reader.onload = async function () {
                 const arrayBuffer = reader.result;
                 const data = Array.from(new Uint8Array(arrayBuffer));
-                await invoke("send_packet", {imageArr: data, metadata: metadata});
+                await invoke("send_video_packet", { imageArr: data });
             }
             reader.readAsArrayBuffer(blob);
         }, "image/jpeg", imageQuality);
+    },
+
+    async sendMetadata() {
+        if (!this.state.map) return;
+
+        const metadata = this.getters.getMetadata();
+        await invoke("send_metadata_packet", { metadata })
     }
 };
 

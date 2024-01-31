@@ -60,15 +60,21 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, klv_appsrc: &gst_app::App
     let udpsink = gst::ElementFactory::make("udpsink").build().expect("failed to build udpsink");
 
     x264enc.set_property_from_str("tune", "zerolatency");
+    x264enc.set_property_from_str("key-int-max", "30");
 
-    mpegtsmux.set_property("alignment", 7);
+    video_queue.set_property_from_str("max-size-buffers", "5");
+    video_queue.set_property_from_str("max-size-time", "100000000");
+    klv_queue.set_property_from_str("max-size-buffers", "5");
+    klv_queue.set_property_from_str("max-size-time", "100000000");
+
+    mpegtsmux.set_property_from_str("alignment", "-1");
     mpegtsmux.set_property("latency", 10 as u64);
-
 
     udpsink.set_property_from_str("host", out_host);
     udpsink.set_property_from_str("port", out_port);
     udpsink.set_property("sync", false);
     udpsink.set_property("async", false);
+    // udpsink.set_property_from_str("buffer-size", "0");
 
 
     let pipeline = gst::Pipeline::new();

@@ -46,10 +46,18 @@ pub struct Metadata {
 
 
 #[tauri::command]
-pub fn send_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>, metadata: Metadata) {
-    // println!("{:?}, {:?}", metadata.sensorTrueAltitude, metadata.sensorLongitude);
-    // let klv = generate_fake_klv_data(32);
+pub fn send_video_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>) {
 
+    let video_appsrc = state.video_appsrc.lock().unwrap();
+    
+    let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create image gst buffer");
+    timestamp_buffer(&mut image_buf, &image_arr);
+
+    video_appsrc.push_buffer(image_buf).expect("Failed to push to image buffer");
+}
+
+#[tauri::command]
+pub fn send_metadata_packet(state: State<utils::AppSharedState>, metadata: Metadata ) {
     let klv_metadata = MISB601::Klv::from(metadata);
     let klv = klv_metadata.encode_to_klv();
 
@@ -59,17 +67,13 @@ pub fn send_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>, meta
     // println!("{:?}", klv);
     // panic!("Exiting early");
 
-    let video_appsrc = state.video_appsrc.lock().unwrap();
     let klv_appsrc = state.klv_appsrc.lock().unwrap();
-    
-    let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create image gst buffer");
-    timestamp_buffer(&mut image_buf, &image_arr);
 
     let mut klv_buf = gst::Buffer::with_size(klv.len()).expect("Failed to create klv gst buffer");
     timestamp_buffer(&mut klv_buf, &klv);
-    
-    video_appsrc.push_buffer(image_buf).expect("Failed to push to image buffer");
+
     klv_appsrc.push_buffer(klv_buf).expect("Failed to push to klv buffer");
+
 }
 
 
