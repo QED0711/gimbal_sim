@@ -15,7 +15,7 @@ pub fn create_video_appsrc() -> gst_app::AppSrc {
     let video_caps = gst::caps::Caps::builder("image/jpeg")
         .field("width", &1280)
         .field("height", &720)
-        .field("framerate", &gst::Fraction::new(20, 1))
+        .field("framerate", &gst::Fraction::new(0, 1))
         .build();
 
     video_appsrc.set_caps(Some(&video_caps));
