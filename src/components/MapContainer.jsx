@@ -47,6 +47,8 @@ export default function MapContainer() {
         });
         viewer.imageryLayers.addImageryProvider(imageryProvider);
 
+        viewer.camera.frustum.fov = Cesium.Math.toRadians(60.0); // set the default fov
+
         mainManager.setters.setMap(viewer);
     }, []);
 

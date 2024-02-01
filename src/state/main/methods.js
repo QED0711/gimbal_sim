@@ -84,6 +84,9 @@ const methods = {
             const gimbal = this.state.gimbal;
             const camera = this.state.map.camera;
 
+            const curFov = camera.frustum.fov;
+            const curFovy = camera.frustum.fovy;
+
             let heading, pitch;
             heading = Cesium.Math.toRadians(gimbal.heading);
             pitch = Cesium.Math.toRadians(gimbal.pitch);
@@ -92,7 +95,23 @@ const methods = {
                 this.state.entity.position.getValue(),
                 new Cesium.HeadingPitchRange(heading, pitch, gimbal.range)
             );
-            camera.zoomIn(gimbal.zoomAmount);
+            camera.frustum.fov = Cesium.Math.toRadians(60) / gimbal.zoomAmount;
+
+            // camera.zoomIn(gimbal.zoomAmount);
+
+            // camera.frustum.fov /= 2.0;
+
+            // let newFov = curFov / (gimbal.zoomAmount || 1.0);
+            // newFov = Cesium.Math.clamp(newFov, 0, Cesium.Math.PI);
+
+            // let newFovy = curFovy / (gimbal.zoomAmount || 1.0);
+            // newFovy = Cesium.Math.clamp(newFov, 0, Cesium.Math.PI);
+
+            // window._fov = {
+            //     hfov: Cesium.Math.toDegrees(newFov),
+            //     vfov: Cesium.Math.toDegrees(newFovy),
+            // }
+
         }
     },
 

@@ -24,7 +24,7 @@ export default function useKeyboardShortcuts() {
         const keyboardActions = {
             ArrowUp(e) {
                 if (e.shiftKey) {
-                    mainManager.setters.adjustGimbalZoom(-500);
+                    mainManager.setters.adjustGimbalZoom(0.1);
                 } else {
                     tempRemoveGimbalLock();
                     mainManager.setters.increaseGimbalPitch(e.ctrlKey ? 0.1 : 1);
@@ -32,7 +32,7 @@ export default function useKeyboardShortcuts() {
             },
             ArrowDown(e) {
                 if (e.shiftKey) {
-                    mainManager.setters.adjustGimbalZoom(500);
+                    mainManager.setters.adjustGimbalZoom(-0.1);
                 } else {
                     tempRemoveGimbalLock();
                     mainManager.setters.decreaseGimbalPitch(e.ctrlKey ? 0.1 : 1);

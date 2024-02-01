@@ -18,7 +18,7 @@ const stateSchema = {
         pitch: 0, 
         heading: 0, 
         range: 0.01, 
-        zoomAmount: 0,
+        zoomAmount: 1,
         isLocked: false,
         target: {lat: 38.93911, lng: -77.44456, alt: 0.00}
 

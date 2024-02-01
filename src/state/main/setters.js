@@ -105,7 +105,7 @@ const setters = {
     adjustGimbalZoom(amount=100){
         this.setState(prevState => {
             return [
-                {gimbal: {...prevState.gimbal, zoomAmount: Math.max(prevState.gimbal.zoomAmount - amount, 0)}},
+                {gimbal: {...prevState.gimbal, zoomAmount: Math.max(prevState.gimbal.zoomAmount + amount, 1)}},
                 [mainPaths.gimbal.zoomAmount]
             ]
         }, () => {
