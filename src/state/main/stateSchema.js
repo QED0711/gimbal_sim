@@ -1,3 +1,9 @@
+import { invoke } from "@tauri-apps/api";
+
+invoke("retrieve_config").then(response => {
+    console.log(response);
+})
+
 
 const stateSchema = {
 

@@ -3,6 +3,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod utils;
+mod config;
 mod cmd;
 mod klv;
 
@@ -11,6 +12,7 @@ use gstreamer as gst;
 use gstreamer::prelude::*;
 
 use utils::AppSharedState;
+use config::{parse_config, retrieve_config};
 use cmd::{data::{send_video_packet, send_metadata_packet}, stream::{create_video_appsrc, create_klv_appsrc, create_pipeline}};
 
 
@@ -20,6 +22,9 @@ fn main() {
     env::set_var("RUST_BACKTRACE", "1");
     // env::set_var("GST_DEBUG", "*:WARN,*:ERROR");
     env::set_var("GST_DEBUG", "0");
+
+    
+    let config = parse_config();
 
     // GStreamer Setup
     // Initialize GStreamer
@@ -38,13 +43,15 @@ fn main() {
     let shared_state: AppSharedState = utils::AppSharedState{
         video_appsrc: Arc::new(Mutex::new(video_appsrc)),
         klv_appsrc: Arc::new(Mutex::new(klv_appsrc)),
+        config
     };
 
     tauri::Builder::default()
         .manage(shared_state)
         .invoke_handler(tauri::generate_handler![
             send_video_packet,
-            send_metadata_packet
+            send_metadata_packet,
+            retrieve_config,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
