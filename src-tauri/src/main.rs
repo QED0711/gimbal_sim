@@ -19,7 +19,7 @@ use cmd::{data::{send_video_packet, send_metadata_packet}, stream::{create_video
 fn main() {
     // See here: https://stackoverflow.com/questions/64983204/merge-two-appsrc-pipelines-into-1-mpeg-ts-stream
 
-    env::set_var("RUST_BACKTRACE", "1");
+    env::set_var("RUST_BACKTRACE", "full");
     // env::set_var("GST_DEBUG", "*:WARN,*:ERROR");
     env::set_var("GST_DEBUG", "0");
 

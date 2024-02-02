@@ -14,9 +14,32 @@ pub struct Args {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(default)]
 pub struct Config {
     start_lat: f64,
-    start_lng: f64
+    start_lng: f64,
+    start_alt: u64,
+    start_speed: f64,
+    start_heading: u16,
+    target_lat: f64,
+    target_lng: f64,
+    target_lock: bool,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            start_lat: 36.356553,
+            start_lng: -112.306541,
+            start_alt: 10000, // meters
+            start_speed: 75.0, // meters per second
+            start_heading: 0,
+
+            target_lat: 0.0,
+            target_lng: 0.0,
+            target_lock: false
+        }
+    }
 }
 
 pub fn parse_config() -> Config {
@@ -24,11 +47,7 @@ pub fn parse_config() -> Config {
 
     let path = Path::new(&args.file_path);
     if !path.exists() {
-        let default = Config {
-            start_lat: 0.0,
-            start_lng: 0.0,
-        };
-    
+        let default = Config::default();
         let mut file = File::create(path).expect("could not create file at path");
 
         let contents = serde_yaml::to_string(&default).expect("could not instantiate default config contents");
@@ -37,7 +56,7 @@ pub fn parse_config() -> Config {
         return default; 
     } else {
         let file = File::open(path).expect("could not open file at path");
-        let config = serde_yaml::from_reader(file).expect("could not read config file at path");
+        let config: Config = serde_yaml::from_reader(file).expect("could not read config file at path");
 
         return config;
     }

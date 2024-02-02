@@ -50,13 +50,7 @@ const useDrawCenterReticule = (canvasRef) => {
 const useUpdatePosition = (canvasRef, position, aircraft, gimbal) => {
     useLayoutEffect(() => {
         const ctx = canvasRef.current.getContext("2d");
-        let fov;
-        try {
-            fov = mainManager.getters.getMap().camera.frustum.fov
-        } catch(err){
-            fov = 0.0
-        }
-
+        const fov = mainManager.getters.getFov()?.hfov ?? 0.0 
         ctx.clearRect(0, 0, window.innerWidth / 2 - 50, window.innerHeight)
         ctx.font = "24px Arial";
         ctx.fillStyle = "cyan"
@@ -70,7 +64,7 @@ const useUpdatePosition = (canvasRef, position, aircraft, gimbal) => {
 
         ctx.fillText(`GIMBAL PITCH: ${gimbal.pitch.toFixed(2)}°`, 10, 200) 
         ctx.fillText(`GIMBAL HEADING: ${gimbal.heading.toFixed(2)}°`, 10, 225) 
-        ctx.fillText(`GIMBAL FOV: ${Cesium.Math.toDegrees(fov).toFixed(2)}°`, 10, 250) 
+        ctx.fillText(`GIMBAL FOV: ${fov.toFixed(2)}°`, 10, 250) 
         
         // ctx.fillText(`GIMBAL ZOOM: ${gimbal.range.toFixed(2)}°`, 10, 250) 
         

@@ -27,31 +27,10 @@ const getters = {
         const camera = this.state.map?.camera;
         if(!camera) return;
 
-        // const imageDimensions = this.state.imageDimensions;
-
-        // const tl = this.getters.getCoordinateAtPixel({x: 0, y: 0});
-        // const br = this.getters.getCoordinateAtPixel({x: window.innerWidth, y: window.innerHeight});
-        // if(!tl || !br) return {hfov: 0.0, vfov: 0.0}; // note that this means FOV is nullified if the camera looks beyond the horizon.
-
-        // const tlCartesian = Cesium.Cartesian3.fromDegrees(tl.lng, tl.lat, tl.alt);
-        // const brCartesian = Cesium.Cartesian3.fromDegrees(br.lng, br.lat, br.alt);
-
-        // const distance = Cesium.Cartesian3.distance(tlCartesian, brCartesian);
-        // const cameraAlt = camera.positionCartographic.height;
-
-        // const diagonalFOV = 2 * Math.atan((distance / 2) / cameraAlt);
-
-        // const aspectRatio = imageDimensions.width / imageDimensions.height;
-
-        // let hfov = 2 * Math.atan(Math.tan(diagonalFOV / 2) * aspectRatio);
-        // let vfov = 2 * Math.atan(Math.tan(diagonalFOV / 2) / aspectRatio);
-
         return {
             hfov: Cesium.Math.toDegrees(camera.frustum.fov),
             vfov: Cesium.Math.toDegrees(camera.frustum.fovy),
         };
-        
-        // return {hfov, vfov};
     },
 
     getMetadata(){
