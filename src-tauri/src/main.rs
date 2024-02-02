@@ -35,7 +35,7 @@ fn main() {
     let klv_appsrc = create_klv_appsrc();
 
     // Pipeline Setup
-    let pipeline = create_pipeline(&video_appsrc, &klv_appsrc, "239.0.0.1", "8000");
+    let pipeline = create_pipeline(&video_appsrc, &klv_appsrc, &config.stream_address, &config.stream_port);
 
     // Start pipeline
     pipeline.set_state(gst::State::Playing).expect("Failed to set pipeline to playing");

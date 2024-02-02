@@ -16,19 +16,25 @@ pub struct Args {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(default)]
 pub struct Config {
-    start_lat: f64,
-    start_lng: f64,
-    start_alt: u64,
-    start_speed: f64,
-    start_heading: u16,
-    target_lat: f64,
-    target_lng: f64,
-    target_lock: bool,
+    pub stream_address: String,
+    pub stream_port: String, 
+    pub start_lat: f64,
+    pub start_lng: f64,
+    pub start_alt: u64,
+    pub start_speed: f64,
+    pub start_heading: u16,
+    pub target_lat: f64,
+    pub target_lng: f64,
+    pub target_lock: bool,
+    pub ion_access_token: Option<String>, 
 }
 
 impl Default for Config {
     fn default() -> Self {
         Config {
+            stream_address: "127.0.0.1".to_string(),
+            stream_port: "15000".to_string(),
+
             start_lat: 36.356553,
             start_lng: -112.306541,
             start_alt: 10000, // meters
@@ -37,7 +43,9 @@ impl Default for Config {
 
             target_lat: 0.0,
             target_lng: 0.0,
-            target_lock: false
+            target_lock: false,
+
+            ion_access_token: None,
         }
     }
 }

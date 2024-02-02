@@ -67,14 +67,14 @@ const methods = {
         const lat = currentPosition.lat + deltaLatitude,
             lng = currentPosition.lng + deltaLongitude,
             alt = currentPosition.alt + deltaAltitude;
-        // console.log(alt)
+
         await this.setters.setPosition({ lat, lng, alt });
 
-        if (this.state.gimbal.isLocked) {
-            const heading = calcHeading({ lat, lng, alt }, this.state.gimbal.target);
-            const pitch = calcPitch({ lat, lng, alt }, this.state.gimbal.target);
-
-            this.setters.setGimbalHeadingPitch(heading, pitch);
+        if (this.state.gimbal.isLocked && this.state.gimbal.target !== null) {
+                const heading = calcHeading({ lat, lng, alt }, this.state.gimbal.target);
+                const pitch = calcPitch({ lat, lng, alt }, this.state.gimbal.target);
+    
+                this.setters.setGimbalHeadingPitch(heading, pitch);
         }
 
     },

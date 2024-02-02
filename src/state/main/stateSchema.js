@@ -1,7 +1,5 @@
-import { invoke } from "@tauri-apps/api";
-window._initConfig = await invoke("retrieve_config");
 
-const initConfig = window._initConfig
+const initConfig = window._initConfig ?? {};
 
 const stateSchema = {
 
