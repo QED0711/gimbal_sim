@@ -82,7 +82,6 @@ const getters = {
             frameCenterAltitude: frameCenter?.alt ?? 0.0,
         }
 
-
         return metadata;
     }
 

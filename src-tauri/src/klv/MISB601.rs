@@ -118,9 +118,9 @@ impl KlvEncode for KlvField {
                 if val < -900.0 || val > 19_000.0 {
                     val = 0.0
                 }
-                let scale = 65535.0 / 19_900.0;
-                let offset = -900.0 * scale;
-                let converted = (val * scale + offset).round() as u16;
+                let scale = u16::MAX as f64 / (19_000.0 - (-900.0));
+                let converted = ((val - (-900.0)) * scale).round() as u16;
+
                 let val_bytes = converted.to_be_bytes();
                 KlvField::populate(&mut klv, &val_bytes)
             }

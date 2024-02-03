@@ -1,5 +1,4 @@
-
-const initConfig = window._initConfig ?? {};
+const initConfig = window._initConfig
 
 const stateSchema = {
 

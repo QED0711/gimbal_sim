@@ -67,6 +67,7 @@ export default function MapContainer() {
         exec();
     }, []);
 
+    // Aircraft Entity
     useEffect(() => {
         if (!!state.map) {
             const aircraftEntity = state.map.entities.add({
@@ -74,7 +75,6 @@ export default function MapContainer() {
                     const position = mainManager.getters.getPosition();
                     return Cesium.Cartesian3.fromDegrees(position.lng, position.lat, position.alt);
                 }, false),
-                // position: Cesium.Cartesian3.fromDegrees(state.startPosition.lng, state.startPosition.lat, state.startPosition.alt),
                 ellipsoid: {
                     radii: new Cesium.Cartesian3(10.0, 10.0, 10.0),
                     material: Cesium.Color.RED.withAlpha(0.0),
@@ -83,9 +83,8 @@ export default function MapContainer() {
             mainManager.setters.setEntity(aircraftEntity);
             state.map.trackedEntity = aircraftEntity;
             setTimeout(mainManager.methods.updateCamera, 500);
-            // mainManager.methods.updateCamera();
         }
-    }, [state.map, state.startPosition]);
+    }, [state.map]);
 
     useEffect(() => {
         if (!!state.map) {
@@ -135,6 +134,7 @@ export default function MapContainer() {
                     FPS
                     <input type="number" min="1" value={fps} onChange={(e) => setFps(parseInt(e.target.value))} />
                 </label>
+                <br/>
             </div>
 
         </>
