@@ -9,6 +9,7 @@ import MapContainer from "./components/MapContainer";
 import ControlsContainer from "./components/controls/ControlsContainer";
 import OverlayHUD from "./components/OverlayHUD";
 import useWindowResize from "./hooks/useWindowResize";
+import MissionSelector from "./components/MissionSelector";
 
 function App() {
   const size = useWindowResize();
@@ -18,6 +19,7 @@ function App() {
       <MapContainer />
       <OverlayHUD />
       <ControlsContainer />
+      <MissionSelector />
     </div>
   );
 }

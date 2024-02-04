@@ -15,37 +15,94 @@ pub struct Args {
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(default)]
+pub struct Location {
+    lat: f64,
+    lng: f64,
+    alt: Option<f64>,
+}
+
+impl Default for Location {
+    fn default() -> Self {
+        Location { lat: 0.0, lng: 0.0, alt: Some(0.0) }
+    }
+}
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(default)]
+pub struct Orientation {
+    heading: u16,
+    speed: f64,
+}
+
+impl Default for Orientation {
+    fn default() -> Self {
+        Orientation { heading: 0, speed: 0.0 }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(default)]
+pub struct MissionTemplate {
+    name: String,
+    aircraft_location: Location,
+    orientation: Orientation,
+    target_location: Option<Location>,
+    target_lock: bool
+}
+
+impl Default for MissionTemplate {
+    fn default() -> Self {
+        MissionTemplate { 
+            name: "DEFAULT".to_string(),
+            aircraft_location: Location::default(),
+            orientation: Orientation::default(),
+            target_location: None,
+            target_lock: false
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(default)]
 pub struct Config {
     pub stream_address: String,
     pub stream_port: String, 
-    pub start_lat: f64,
-    pub start_lng: f64,
-    pub start_alt: u64,
-    pub start_speed: f64,
-    pub start_heading: u16,
-    pub target_lat: f64,
-    pub target_lng: f64,
-    pub target_lock: bool,
     pub ion_access_token: Option<String>, 
+
+    pub mission_templates: Vec<MissionTemplate>,
+
+    // pub start_lat: f64,
+    // pub start_lng: f64,
+    // pub start_alt: u64,
+    // pub start_speed: f64,
+    // pub start_heading: u16,
+    // pub target_lat: f64,
+    // pub target_lng: f64,
+    // pub target_lock: bool,
 }
+
+
 
 impl Default for Config {
     fn default() -> Self {
         Config {
             stream_address: "127.0.0.1".to_string(),
             stream_port: "15000".to_string(),
-
-            start_lat: 36.356553,
-            start_lng: -112.306541,
-            start_alt: 10000, // meters
-            start_speed: 75.0, // meters per second
-            start_heading: 0,
-
-            target_lat: 0.0,
-            target_lng: 0.0,
-            target_lock: false,
-
             ion_access_token: None,
+
+            mission_templates: vec![
+                MissionTemplate::default()
+            ],
+
+            // start_lat: 36.356553,
+            // start_lng: -112.306541,
+            // start_alt: 10000, // meters
+            // start_speed: 75.0, // meters per second
+            // start_heading: 0,
+
+            // target_lat: 0.0,
+            // target_lng: 0.0,
+            // target_lock: false,
+
         }
     }
 }

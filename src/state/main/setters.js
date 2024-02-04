@@ -160,6 +160,48 @@ const setters = {
         })
     },
 
+    changeSelectedMission(missionIdx) {
+        this.setState(prevState => {
+            const mission = this.state.missions[missionIdx];
+            if(!mission) return [{}, []];
+            const position = {
+                lat: mission.aircraft_location?.lat ?? 0,
+                lng: mission.aircraft_location?.lng ?? 0,
+                alt: mission.aircraft_location?.alt ?? 0,
+            }
+            const aircraft = {
+                ...prevState.aircraft,
+                heading: mission.orientation?.heading ?? 0,
+                velocity: mission.orientation?.speed ?? 0
+            }
+            const gimbal = {
+                ...prevState.gimbal,
+                zoomAmount: 1,
+                heading: mission.orientation?.heading ?? 0,
+                target: {
+                    lat: mission.target_location?.lat ?? 0,
+                    lng: mission.target_location?.lng ?? 0,
+                    alt: mission.target_location?.alt ?? 0,
+                },
+                isLocked: !!mission.target_lock
+            }
+            return [
+                {
+                    selectedMissionIndex: missionIdx,
+                    position,
+                    aircraft,
+                    gimbal,
+                },
+                [
+                    this.paths.selectedMissionIndex,
+                    this.paths.position,
+                    this.paths.aircraft,
+                    this.paths.gimbal,
+                ]
+            ]
+        })
+    },
+
 };
 
 export default setters;

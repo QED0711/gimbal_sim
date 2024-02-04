@@ -2,6 +2,10 @@ import * as Cesium from "cesium";
 
 const getters = {
 
+    getSelectedMission(){
+        return this.state.missions[this.state.selectedMissionIndex]
+    },
+
     getCoordinateAtPixel({x, y}) {
         if(!this.state.map) return null;
         const map = this.state.map;
@@ -53,7 +57,7 @@ const getters = {
 
         const metadata = {
             precisionTimeStamp: Date.now(),
-            missionID: "MISSION_01",
+            missionID: this.getters.getSelectedMission()?.name ?? "MISSION",
             platformTailNumber: "NTR42",
 
             platformHeadingAngle: aircraft.heading,
