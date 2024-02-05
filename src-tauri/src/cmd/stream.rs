@@ -74,7 +74,7 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, klv_appsrc: &gst_app::App
     udpsink.set_property_from_str("port", out_port);
     udpsink.set_property("sync", false);
     udpsink.set_property("async", false);
-    // udpsink.set_property_from_str("buffer-size", "0");
+    udpsink.set_property_from_str("buffer-size", "0");
 
 
     let pipeline = gst::Pipeline::new();

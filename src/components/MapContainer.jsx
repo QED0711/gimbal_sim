@@ -105,6 +105,7 @@ export default function MapContainer() {
         if (record) {
             window._recordingInterval = setInterval(() => { mainManager.methods.sendImage(imageQuality) }, 1000 / fps);
             window._metadataInterval = setInterval(() => { mainManager.methods.sendMetadata() }, (1000 / fps) / 3); // metadata sent at 3 times the rate of video
+            // window._metadataInterval = setInterval(() => { mainManager.methods.sendMetadata() }, 1000 / fps); 
         }
 
     }, [record, imageQuality, fps]);
