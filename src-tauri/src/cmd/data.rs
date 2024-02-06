@@ -5,6 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use std::fs::OpenOptions;
 use std::io::{self, Write};
 use std::env;
+use gst::buffer;
 use rand::Rng;
 use tauri::State;
 use gstreamer as gst;
@@ -57,15 +58,18 @@ pub fn send_video_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>
 }
 
 #[tauri::command]
+pub fn send_hud_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>) {
+    let hud_appsrc = state.hud_appsrc.lock().unwrap();
+    let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create hud gst buffer");
+    timestamp_buffer(&mut image_buf, &image_arr);
+
+    hud_appsrc.push_buffer(image_buf).expect("Failed to push to hud buffer");
+}
+
+#[tauri::command]
 pub fn send_metadata_packet(state: State<utils::AppSharedState>, metadata: Metadata ) {
     let klv_metadata = MISB601::Klv::from(metadata);
     let klv = klv_metadata.encode_to_klv();
-
-    // let file_path = env::current_dir().unwrap().into_os_string().into_string().unwrap();
-    // let file_path  = format!("{}/../python/klv_raw.bin", file_path);
-    // append_to_file(&file_path, &klv);
-    // println!("{:?}", klv);
-    // panic!("Exiting early");
 
     let klv_appsrc = state.klv_appsrc.lock().unwrap();
 

@@ -13,7 +13,7 @@ const useScaleCanvas = (canvasRef) => {
 
         const ctx = canvasRef.current.getContext("2d");
         ctx.scale(dpr, dpr);
-
+        mainManager.setters.setHud(canvasRef.current);
     }, [])
 }
 
@@ -85,11 +85,6 @@ export default function OverlayHUD(){
     useDrawCenterReticule(canvasRef);
     useUpdatePosition(canvasRef, state.position, state.aircraft, state.gimbal);
 
-    // useLayoutEffect(() => {
-    //     setInterval(() => {
-    //         mainManager.methods.sendImage(canvasRef.current);
-    //     })
-    // }, [])
     return (
         <canvas ref={canvasRef} className="fixed top-0 left-0 bg-transparent"></canvas>
     )

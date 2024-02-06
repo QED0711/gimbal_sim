@@ -5,44 +5,6 @@ import { calcHeading, calcPitch } from "../../utils/map";
 let callCount = 0;
 let lastLogTime = Date.now();
 
-function logCallRate() {
-    const now = Date.now();
-    callCount++;
-
-    if (now - lastLogTime >= 1000) {
-        // Check if one second has passed
-        console.log(`Function called ${callCount} times in the last second.`);
-        callCount = 0; // Reset the counter
-        lastLogTime = now; // Update the last log time
-    }
-}
-
-function calculateSpeed(deltaTimeMs, prevLat, prevLng, curLat, curLng) {
-    // Check if Cesium is loaded
-    if (typeof Cesium === "undefined") {
-        console.error("Cesium is not loaded");
-        return;
-    }
-
-    // Convert deltaTime from milliseconds to seconds
-    const deltaTimeSeconds = deltaTimeMs / 1000;
-
-    // Create Cesium Cartographic objects for previous and current positions
-    const prevPosition = Cesium.Cartographic.fromDegrees(prevLng, prevLat);
-    const curPosition = Cesium.Cartographic.fromDegrees(curLng, curLat);
-
-    // Calculate the surface distance in meters
-    const surfaceDistance = Cesium.Cartesian3.distance(
-        Cesium.Ellipsoid.WGS84.cartographicToCartesian(prevPosition),
-        Cesium.Ellipsoid.WGS84.cartographicToCartesian(curPosition)
-    );
-
-    // Calculate speed in meters per second
-    const speed = surfaceDistance / deltaTimeSeconds;
-
-    return speed;
-}
-
 const methods = {
     async updateAircraftPosition() {
         if (!this.state.map || this.state.isPaused || !this.state.entity) return;
@@ -96,22 +58,6 @@ const methods = {
                 new Cesium.HeadingPitchRange(heading, pitch, gimbal.range)
             );
             camera.frustum.fov = Cesium.Math.toRadians(60) / gimbal.zoomAmount;
-
-            // camera.zoomIn(gimbal.zoomAmount);
-
-            // camera.frustum.fov /= 2.0;
-
-            // let newFov = curFov / (gimbal.zoomAmount || 1.0);
-            // newFov = Cesium.Math.clamp(newFov, 0, Cesium.Math.PI);
-
-            // let newFovy = curFovy / (gimbal.zoomAmount || 1.0);
-            // newFovy = Cesium.Math.clamp(newFov, 0, Cesium.Math.PI);
-
-            // window._fov = {
-            //     hfov: Cesium.Math.toDegrees(newFov),
-            //     vfov: Cesium.Math.toDegrees(newFovy),
-            // }
-
         }
     },
 
@@ -125,6 +71,18 @@ const methods = {
                 const arrayBuffer = reader.result;
                 const data = Array.from(new Uint8Array(arrayBuffer));
                 await invoke("send_video_packet", { imageArr: data });
+            }
+            reader.readAsArrayBuffer(blob);
+        }, "image/jpeg", imageQuality);
+
+
+        this.state.hud.toBlob(blob => {
+            const reader = new FileReader();
+
+            reader.onload = async function() {
+                const arrayBuffer = reader.result;
+                const data = Array.from(new Uint8Array(arrayBuffer));
+                await invoke("send_hud_packet", {imageArr: data});
             }
             reader.readAsArrayBuffer(blob);
         }, "image/jpeg", imageQuality);

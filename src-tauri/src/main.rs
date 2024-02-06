@@ -13,7 +13,7 @@ use gstreamer::prelude::*;
 
 use utils::AppSharedState;
 use config::{parse_config, retrieve_config};
-use cmd::{data::{send_video_packet, send_metadata_packet}, stream::{create_video_appsrc, create_klv_appsrc, create_pipeline}};
+use cmd::{data::{send_video_packet, send_hud_packet, send_metadata_packet}, stream::{create_video_appsrc, create_klv_appsrc, create_pipeline}};
 
 
 fn main() {
@@ -21,7 +21,7 @@ fn main() {
 
     env::set_var("RUST_BACKTRACE", "full");
     // env::set_var("GST_DEBUG", "*:WARN,*:ERROR");
-    env::set_var("GST_DEBUG", "0");
+    env::set_var("GST_DEBUG", "6");
 
     
     let config = parse_config();
@@ -32,16 +32,18 @@ fn main() {
 
     // Create the elements
     let video_appsrc = create_video_appsrc();
+    let hud_appsrc = create_video_appsrc();
     let klv_appsrc = create_klv_appsrc();
 
     // Pipeline Setup
-    let pipeline = create_pipeline(&video_appsrc, &klv_appsrc, &config.stream_address, &config.stream_port);
+    let pipeline = create_pipeline(&video_appsrc, &hud_appsrc, &klv_appsrc, &config.stream_address, &config.stream_port);
 
     // Start pipeline
     pipeline.set_state(gst::State::Playing).expect("Failed to set pipeline to playing");
 
     let shared_state: AppSharedState = utils::AppSharedState{
         video_appsrc: Arc::new(Mutex::new(video_appsrc)),
+        hud_appsrc: Arc::new(Mutex::new(hud_appsrc)),
         klv_appsrc: Arc::new(Mutex::new(klv_appsrc)),
         config
     };
@@ -50,6 +52,7 @@ fn main() {
         .manage(shared_state)
         .invoke_handler(tauri::generate_handler![
             send_video_packet,
+            send_hud_packet,
             send_metadata_packet,
             retrieve_config,
         ])

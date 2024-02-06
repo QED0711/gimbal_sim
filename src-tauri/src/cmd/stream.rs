@@ -26,7 +26,6 @@ pub fn create_video_appsrc() -> gst_app::AppSrc {
     return video_appsrc;
 }
 
-
 pub fn create_klv_appsrc() -> gst_app::AppSrc {
     
     let klv_appsrc = gst::ElementFactory::make("appsrc")
@@ -48,16 +47,21 @@ pub fn create_klv_appsrc() -> gst_app::AppSrc {
 }
 
 
-pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, klv_appsrc: &gst_app::AppSrc, out_host: &str, out_port: &str) -> Pipeline {
+pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::AppSrc, klv_appsrc: &gst_app::AppSrc, out_host: &str, out_port: &str) -> Pipeline {
 
-    let jpegparse = gst::ElementFactory::make("jpegparse").build().expect("failed to build jpegparse");
-    let jpegdec = gst::ElementFactory::make("jpegdec").build().expect("failed to build jpegdec");
+    let jpegparse_video = gst::ElementFactory::make("jpegparse").build().expect("failed to build jpegparse_video");
+    let jpegdec_video = gst::ElementFactory::make("jpegdec").build().expect("failed to build jpegdec_video");
+    let jpegparse_hud = gst::ElementFactory::make("jpegparse").build().expect("failed to build jpegparse_hud");
+    let jpegdec_hud = gst::ElementFactory::make("jpegdec").build().expect("failed to build jpegdec_hud");
+    let compositor = gst::ElementFactory::make("compositor").build().expect("failed to build compositor");
     let videoconvert = gst::ElementFactory::make("videoconvert").build().expect("failed to build videoconvert");
     let x264enc = gst::ElementFactory::make("x264enc").build().expect("failed to build x264enc");
     let video_queue = gst::ElementFactory::make("queue").build().expect("failed to build videoqueue");
     let klv_queue = gst::ElementFactory::make("queue").build().expect("failed to build klvqueue");
     let mpegtsmux = gst::ElementFactory::make("mpegtsmux").build().expect("failed to build mpegtsmux");
     let udpsink = gst::ElementFactory::make("udpsink").build().expect("failed to build udpsink");
+
+    compositor.set_property_from_str("background", "2");
 
     x264enc.set_property_from_str("tune", "zerolatency");
     x264enc.set_property_from_str("key-int-max", "30");
@@ -81,8 +85,12 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, klv_appsrc: &gst_app::App
 
     pipeline.add_many(&[
         &video_appsrc.upcast_ref(),
-        &jpegparse,
-        &jpegdec,
+        &hud_appsrc.upcast_ref(),
+        &jpegparse_video,
+        &jpegdec_video,
+        &jpegparse_hud,
+        &jpegdec_hud,
+        &compositor,
         &videoconvert,
         &x264enc,
         &video_queue,
@@ -95,8 +103,9 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, klv_appsrc: &gst_app::App
 
     gst::Element::link_many(&[
         &video_appsrc.upcast_ref(),
-        &jpegparse,
-        &jpegdec,
+        &jpegparse_video,
+        &jpegdec_video,
+        &compositor,
         &videoconvert,
         &x264enc,
         &video_queue,
@@ -104,11 +113,26 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, klv_appsrc: &gst_app::App
     ])
     .expect("failed to link_many");
 
+    gst::Element::link_many(&[
+        &hud_appsrc.upcast_ref(),
+        &jpegparse_hud,
+        &jpegdec_hud,
+        &compositor
+    ])
+    .expect("failed to link hud video pipeline");
 
-    klv_appsrc.link(&klv_queue).expect("Failed to link klvsrc to klv_queue element"); // without queue in between
-    klv_queue.link(&mpegtsmux).expect("failed to link klv_queue to mpegtsmux element");
-    // klv_appsrc.link(&mpegtsmux).expect("Failed to link klvsrc to mpegtsmux element"); // without queue in between
-    mpegtsmux.link(&udpsink).expect("Failed to link mpegtsmux to udpsink");
+
+    gst::Element::link_many(&[
+        &klv_appsrc.upcast_ref(),
+        &klv_queue,
+        &mpegtsmux,
+        &udpsink
+    ])
+    .expect("failed to link klv pipeline");
+
+    // klv_appsrc.link(&klv_queue).expect("Failed to link klvsrc to klv_queue element"); // without queue in between
+    // klv_queue.link(&mpegtsmux).expect("failed to link klv_queue to mpegtsmux element");
+    // mpegtsmux.link(&udpsink).expect("Failed to link mpegtsmux to udpsink");
 
     return pipeline;
 }
