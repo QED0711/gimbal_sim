@@ -12,16 +12,20 @@ use gstreamer as gst;
 use gstreamer::prelude::*;
 
 use utils::AppSharedState;
-use config::{parse_config, retrieve_config};
+use clap::Parser;
+use config::{parse_config, retrieve_config, Args};
 use cmd::{data::{send_video_packet, send_hud_packet, send_metadata_packet}, stream::{create_video_appsrc, create_klv_appsrc, create_pipeline}};
 
 
 fn main() {
     // See here: https://stackoverflow.com/questions/64983204/merge-two-appsrc-pipelines-into-1-mpeg-ts-stream
 
+    let args = Args::parse();
+    println!("{:?}", args);
     env::set_var("RUST_BACKTRACE", "full");
     // env::set_var("GST_DEBUG", "*:WARN,*:ERROR");
     env::set_var("GST_DEBUG", "6");
+    env::set_var("GST_DEBUG_DUMP_DOT_DIR", "/home/qdizon/app");
 
     
     let config = parse_config();
@@ -37,6 +41,11 @@ fn main() {
 
     // Pipeline Setup
     let pipeline = create_pipeline(&video_appsrc, &hud_appsrc, &klv_appsrc, &config.stream_address, &config.stream_port);
+
+    if (args.gst_debug) {
+        println!("DEBUGGING PIPELINE GRAPH");
+        gst::debug_bin_to_dot_file(&pipeline, gst::DebugGraphDetails::ALL, "pipeline");
+    }
 
     // Start pipeline
     pipeline.set_state(gst::State::Playing).expect("Failed to set pipeline to playing");
