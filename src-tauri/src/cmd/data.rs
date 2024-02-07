@@ -1,17 +1,29 @@
 use crate::klv::MISB601;
 
 use super::super::utils;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH, Instant, Duration};
 use std::fs::OpenOptions;
 use std::io::{self, Write};
-use std::env;
-use gst::buffer;
-use rand::Rng;
+use std::sync::Mutex;
+use std::collections::HashMap;
+use once_cell::sync::Lazy;
+
 use tauri::State;
 use gstreamer as gst;
 use serde::Deserialize;
 
+static START_TIME: Lazy<Mutex<Option<Instant>>> = Lazy::new(|| Mutex::new(None));
 
+const VIDEO_FRAMERATE: u64 = 30;
+const VIDEO_FRAME_DURATION_MS: u64 = 1000 / VIDEO_FRAMERATE;
+const KLV_FRAME_DURATION_MS: u64 = VIDEO_FRAMERATE / 3;
+
+struct StreamTiming {
+    start_time: Instant,
+    frame_count: u64,
+}
+
+static STREAM_TIMINGS: Lazy<Mutex<HashMap<String, StreamTiming>>> = Lazy::new(|| Mutex::new(HashMap::new()));
 
 #[derive(Debug, Deserialize)]
 #[allow(non_snake_case)]
@@ -48,11 +60,9 @@ pub struct Metadata {
 
 #[tauri::command]
 pub fn send_video_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>) {
-
     let video_appsrc = state.video_appsrc.lock().unwrap();
-    
     let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create image gst buffer");
-    timestamp_buffer(&mut image_buf, &image_arr);
+    timestamp_buffer("video", &mut image_buf, &image_arr);
 
     video_appsrc.push_buffer(image_buf).expect("Failed to push to image buffer");
 }
@@ -61,7 +71,7 @@ pub fn send_video_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>
 pub fn send_hud_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>) {
     let hud_appsrc = state.hud_appsrc.lock().unwrap();
     let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create hud gst buffer");
-    timestamp_buffer(&mut image_buf, &image_arr);
+    timestamp_buffer("hud", &mut image_buf, &image_arr);
 
     hud_appsrc.push_buffer(image_buf).expect("Failed to push to hud buffer");
 }
@@ -74,7 +84,7 @@ pub fn send_metadata_packet(state: State<utils::AppSharedState>, metadata: Metad
     let klv_appsrc = state.klv_appsrc.lock().unwrap();
 
     let mut klv_buf = gst::Buffer::with_size(klv.len()).expect("Failed to create klv gst buffer");
-    timestamp_buffer(&mut klv_buf, &klv);
+    timestamp_buffer("klv", &mut klv_buf, &klv);
 
     klv_appsrc.push_buffer(klv_buf).expect("Failed to push to klv buffer");
 
@@ -82,19 +92,45 @@ pub fn send_metadata_packet(state: State<utils::AppSharedState>, metadata: Metad
 
 
 // #[allow(dead_code)]
-fn timestamp_buffer(buffer: &mut gst::Buffer, data: &Vec<u8>){
+fn timestamp_buffer(stream_id: &str, buffer: &mut gst::Buffer, data: &Vec<u8>){
+
+    let mut timings = STREAM_TIMINGS.lock().unwrap();
+    let timing = timings.entry(stream_id.to_string()).or_insert_with(|| StreamTiming {
+        start_time: Instant::now(),
+        frame_count: 0,
+    });
+
+    // Calculate the PTS based on the frame count and known framerate
+    let pts: gst::ClockTime;
+    if stream_id == "klv" {
+        pts = gst::ClockTime::from_mseconds(timing.frame_count * KLV_FRAME_DURATION_MS);
+    } else {
+        pts = gst::ClockTime::from_mseconds(timing.frame_count * VIDEO_FRAME_DURATION_MS);
+    }
+    timing.frame_count += 1;
+
+    // Update the buffer properties
     let buffer = buffer.get_mut().unwrap();
+    buffer.set_pts(pts);
+    buffer.set_dts(pts); // DTS is often the same as PTS for decoded video frames
+    buffer.set_duration(gst::ClockTime::from_mseconds(VIDEO_FRAME_DURATION_MS));
+
+
     let _ = buffer.copy_from_slice(0, data);
 
-    let now = SystemTime::now().duration_since(UNIX_EPOCH)
-        .expect("Time went backwards");
+    // OLD LOGIC
+    // let buffer = buffer.get_mut().unwrap();
+    // let _ = buffer.copy_from_slice(0, data);
 
-    let pts = gst::ClockTime::from_mseconds(now.as_millis() as u64);
+    // let now = SystemTime::now().duration_since(UNIX_EPOCH)
+    //     .expect("Time went backwards");
 
-    buffer.set_pts(pts);
-    buffer.set_dts(pts);
-    buffer.set_duration(pts);
-    buffer.set_offset(now.as_millis() as u64);
+    // let pts = gst::ClockTime::from_mseconds(now.as_millis() as u64);
+
+    // buffer.set_pts(pts);
+    // buffer.set_dts(pts);
+    // buffer.set_duration(pts);
+    // buffer.set_offset(now.as_millis() as u64);
 
 }
 

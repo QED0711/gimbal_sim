@@ -24,7 +24,7 @@ fn main() {
     println!("{:?}", args);
     env::set_var("RUST_BACKTRACE", "full");
     // env::set_var("GST_DEBUG", "*:WARN,*:ERROR");
-    env::set_var("GST_DEBUG", "6");
+    // env::set_var("GST_DEBUG", "6");
     env::set_var("GST_DEBUG_DUMP_DOT_DIR", "/home/qdizon/app");
 
     
@@ -44,7 +44,7 @@ fn main() {
 
     if (args.gst_debug) {
         println!("DEBUGGING PIPELINE GRAPH");
-        gst::debug_bin_to_dot_file(&pipeline, gst::DebugGraphDetails::ALL, "pipeline");
+        gst::debug_bin_to_dot_file(&pipeline, gst::DebugGraphDetails::VERBOSE, "pipeline");
     }
 
     // Start pipeline

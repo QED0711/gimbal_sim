@@ -15,7 +15,7 @@ pub fn create_video_appsrc() -> gst_app::AppSrc {
     let video_caps = gst::caps::Caps::builder("image/jpeg")
         .field("width", &1280)
         .field("height", &720)
-        .field("framerate", &gst::Fraction::new(20, 1))
+        .field("framerate", &gst::Fraction::new(30, 1))
         .build();
 
     video_appsrc.set_caps(Some(&video_caps));
@@ -72,7 +72,7 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
         .field("format", "RGB")
         .field("width", &1280)
         .field("height", &720)
-        .field("framerate", &gst::Fraction::new(20, 1))
+        .field("framerate", &gst::Fraction::new(30, 1))
         .build();
 
     capsfilter_video.set_property("caps", &jpegdec_caps);
@@ -94,7 +94,7 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
     sinkpad_hud.set_property("ypos", 0);
     sinkpad_hud.set_property("width", 1280);
     sinkpad_hud.set_property("height", 720);
-    sinkpad_hud.set_property("alpha", 0.7);
+    sinkpad_hud.set_property("alpha", 0.4);
     sinkpad_hud.set_property_from_str("operator", "2");
 
     capsfilter_convert.set_property("caps", &jpegdec_caps);
@@ -137,7 +137,7 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
         &klv_appsrc.upcast_ref(),
         &mpegtsmux,
         &udpsink,
-        // &fdsink,
+        &fdsink,
     ])
     .expect("failed to add to pipeline");
 
@@ -147,11 +147,6 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
         &jpegdec_video,
         &capsfilter_video,
         &compositor,
-        &capsfilter_convert,
-        &videoconvert,
-        &x264enc,
-        &video_queue,
-        &mpegtsmux,
     ])
     .expect("failed to link video pipeline");
 
@@ -161,7 +156,6 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
         &jpegdec_hud,
         &capsfilter_hud,
         &compositor,
-    // &fdsink
     ])
     .expect("failed to link hud video pipeline");
     // &hud_appsrc.link(&fdsink).expect("failed to link to fdsink");
@@ -170,9 +164,20 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
         &klv_appsrc.upcast_ref(),
         &klv_queue,
         &mpegtsmux,
-        &udpsink
     ])
     .expect("failed to link klv pipeline");
+
+    gst::Element::link_many(&[
+        &compositor,
+        &capsfilter_convert,
+        &videoconvert,
+        &x264enc,
+        &video_queue,
+        &mpegtsmux,
+        &udpsink,
+    ])
+    .expect("failed to link tial of pipeline");
+
 
 
     return pipeline;

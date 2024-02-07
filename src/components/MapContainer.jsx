@@ -13,7 +13,7 @@ export default function MapContainer() {
     ]);
     const [record, setRecord] = useState(false);
     const [imageQuality, setImageQuality] = useState(0.3);
-    const [fps, setFps] = useState(20);
+    const [fps, setFps] = useState(30);
 
     // EFFECTS
     useEffect(() => {

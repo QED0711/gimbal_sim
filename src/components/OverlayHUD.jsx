@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from "react"
 import { useSpiccatoState } from "spiccato-react";
 import mainManager, { mainPaths } from "../state/main/mainManager";
-import * as Cesium from 'cesium';
 
 const useScaleCanvas = (canvasRef) => {
     useLayoutEffect(() => {
