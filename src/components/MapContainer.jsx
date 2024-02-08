@@ -13,7 +13,7 @@ export default function MapContainer() {
     ]);
     const [record, setRecord] = useState(false);
     const [imageQuality, setImageQuality] = useState(0.3);
-    const [fps, setFps] = useState(30);
+    const [fps, setFps] = useState(20);
 
     // EFFECTS
     useEffect(() => {
@@ -135,7 +135,7 @@ export default function MapContainer() {
                     FPS
                     <input type="number" min="1" value={fps} onChange={(e) => setFps(parseInt(e.target.value))} />
                 </label>
-                <br/>
+                <br />
             </div>
 
         </>

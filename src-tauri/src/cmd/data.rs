@@ -12,11 +12,28 @@ use tauri::State;
 use gstreamer as gst;
 use serde::Deserialize;
 
-static START_TIME: Lazy<Mutex<Option<Instant>>> = Lazy::new(|| Mutex::new(None));
 
 const VIDEO_FRAMERATE: u64 = 30;
 const VIDEO_FRAME_DURATION_MS: u64 = 1000 / VIDEO_FRAMERATE;
 const KLV_FRAME_DURATION_MS: u64 = VIDEO_FRAMERATE / 3;
+
+static LAST_CALL: Lazy<Mutex<Option<Instant>>> = Lazy::new(|| Mutex::new(None));
+
+fn print_elapsed_time() {
+    let mut last_call = LAST_CALL.lock().unwrap(); // Lock the mutex to access the last call time
+    let now = Instant::now();
+
+    match *last_call {
+        Some(last_instant) => {
+            let elapsed = now.duration_since(last_instant);
+            println!("Time since last call: {:.2?}", elapsed);
+        }
+        None => println!("First call"),
+    }
+
+    *last_call = Some(now); // Update the last call time to now
+}
+
 
 struct StreamTiming {
     start_time: Instant,
@@ -64,6 +81,8 @@ pub fn send_video_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>
     let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create image gst buffer");
     timestamp_buffer("video", &mut image_buf, &image_arr);
 
+    print_elapsed_time();
+    // println!("timestamp: {:?}", image_buf);
     video_appsrc.push_buffer(image_buf).expect("Failed to push to image buffer");
 }
 
@@ -72,7 +91,6 @@ pub fn send_hud_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>) 
     let hud_appsrc = state.hud_appsrc.lock().unwrap();
     let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create hud gst buffer");
     timestamp_buffer("hud", &mut image_buf, &image_arr);
-
     hud_appsrc.push_buffer(image_buf).expect("Failed to push to hud buffer");
 }
 
@@ -112,8 +130,10 @@ fn timestamp_buffer(stream_id: &str, buffer: &mut gst::Buffer, data: &Vec<u8>){
     // Update the buffer properties
     let buffer = buffer.get_mut().unwrap();
     buffer.set_pts(pts);
+    // buffer.set_pts(pts);
     buffer.set_dts(pts); // DTS is often the same as PTS for decoded video frames
-    buffer.set_duration(gst::ClockTime::from_mseconds(VIDEO_FRAME_DURATION_MS));
+    // buffer.set_duration(gst::ClockTime::from_mseconds(VIDEO_FRAME_DURATION_MS));
+    buffer.set_duration(gst::ClockTime::from_mseconds(0 as u64));
 
 
     let _ = buffer.copy_from_slice(0, data);
