@@ -83,7 +83,7 @@ pub fn send_video_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>
     timestamp_buffer(&mut image_buf, &image_arr);
 
     // print_elapsed_time();
-    println!("timestamp: {:?}", image_buf);
+    // println!("timestamp: {:?}", image_buf);
     video_appsrc.push_buffer(image_buf).expect("Failed to push to image buffer");
 }
 
