@@ -69,6 +69,7 @@ impl Default for MissionTemplate {
 pub struct Config {
     pub stream_address: String,
     pub stream_port: String, 
+    pub fps: i32,
     pub ion_access_token: Option<String>, 
 
     pub mission_templates: Vec<MissionTemplate>,
@@ -90,6 +91,7 @@ impl Default for Config {
         Config {
             stream_address: "127.0.0.1".to_string(),
             stream_port: "15000".to_string(),
+            fps: 30,
             ion_access_token: None,
 
             mission_templates: vec![

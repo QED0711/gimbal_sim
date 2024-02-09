@@ -40,7 +40,7 @@ fn main() {
     let klv_appsrc = create_klv_appsrc();
 
     // Pipeline Setup
-    let pipeline = create_pipeline(&video_appsrc, &hud_appsrc, &klv_appsrc, &config.stream_address, &config.stream_port);
+    let pipeline = create_pipeline(&video_appsrc, &hud_appsrc, &klv_appsrc, &config.stream_address, &config.stream_port, config.fps);
 
     if (args.gst_debug) {
         println!("DEBUGGING PIPELINE GRAPH");

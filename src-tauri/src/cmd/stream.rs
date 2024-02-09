@@ -51,7 +51,7 @@ pub fn create_klv_appsrc() -> gst_app::AppSrc {
 }
 
 
-pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::AppSrc, klv_appsrc: &gst_app::AppSrc, out_host: &str, out_port: &str) -> Pipeline {
+pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::AppSrc, klv_appsrc: &gst_app::AppSrc, out_host: &str, out_port: &str, fps: i32) -> Pipeline {
 
     let jpegparse_video = gst::ElementFactory::make("jpegparse").build().expect("failed to build jpegparse_video");
     let jpegdec_video = gst::ElementFactory::make("jpegdec").build().expect("failed to build jpegdec_video");
@@ -92,7 +92,7 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
         .field("format", "I420")
         .field("width", 1280)
         .field("height", 720)
-        .field("framerate", &gst::Fraction::new(10, 1))
+        .field("framerate", &gst::Fraction::new(fps, 1))
         .build();
 
     
@@ -130,6 +130,7 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
     capsfilter_convert.set_property("caps", &jpegdec_caps);
 
     x264enc.set_property_from_str("tune", "zerolatency");
+    x264enc.set_property_from_str("speed-preset", "ultrafast");
     x264enc.set_property_from_str("key-int-max", "30");
 
     video_queue.set_property_from_str("max-size-buffers", "5");
