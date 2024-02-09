@@ -14,7 +14,7 @@ use gstreamer::prelude::*;
 use utils::AppSharedState;
 use clap::Parser;
 use config::{parse_config, retrieve_config, Args};
-use cmd::{data::{send_video_packet, send_hud_packet, send_metadata_packet}, stream::{create_video_appsrc, create_klv_appsrc, create_pipeline}};
+use cmd::{data::{send_video_packet, send_hud_packet, send_metadata_packet}, stream::{create_video_appsrc, create_klv_appsrc, create_pipeline, start_pipeline, pause_pipeline}};
 
 
 fn main() {
@@ -24,7 +24,7 @@ fn main() {
     println!("{:?}", args);
     env::set_var("RUST_BACKTRACE", "full");
     // env::set_var("GST_DEBUG", "*:WARN,*:ERROR");
-    // env::set_var("GST_DEBUG", "6");
+    // env::set_var("GST_DEBUG", "videorate:6");
     env::set_var("GST_DEBUG_DUMP_DOT_DIR", "/home/qdizon/app");
 
     
@@ -48,9 +48,10 @@ fn main() {
     }
 
     // Start pipeline
-    pipeline.set_state(gst::State::Playing).expect("Failed to set pipeline to playing");
+    // pipeline.set_state(gst::State::Playing).expect("Failed to set pipeline to playing");
 
     let shared_state: AppSharedState = utils::AppSharedState{
+        gst_pipeline: Arc::new(Mutex::new(pipeline)),
         video_appsrc: Arc::new(Mutex::new(video_appsrc)),
         hud_appsrc: Arc::new(Mutex::new(hud_appsrc)),
         klv_appsrc: Arc::new(Mutex::new(klv_appsrc)),
@@ -60,6 +61,8 @@ fn main() {
     tauri::Builder::default()
         .manage(shared_state)
         .invoke_handler(tauri::generate_handler![
+            start_pipeline,
+            pause_pipeline,
             send_video_packet,
             send_hud_packet,
             send_metadata_packet,

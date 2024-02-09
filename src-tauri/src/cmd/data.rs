@@ -17,6 +17,7 @@ const VIDEO_FRAMERATE: u64 = 30;
 const VIDEO_FRAME_DURATION_MS: u64 = 1000 / VIDEO_FRAMERATE;
 const KLV_FRAME_DURATION_MS: u64 = VIDEO_FRAMERATE / 3;
 
+static START_TIME: Lazy<Mutex<Instant>> = Lazy::new(|| Mutex::new(Instant::now()));
 static LAST_CALL: Lazy<Mutex<Option<Instant>>> = Lazy::new(|| Mutex::new(None));
 
 fn print_elapsed_time() {
@@ -79,10 +80,10 @@ pub struct Metadata {
 pub fn send_video_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>) {
     let video_appsrc = state.video_appsrc.lock().unwrap();
     let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create image gst buffer");
-    timestamp_buffer("video", &mut image_buf, &image_arr);
+    timestamp_buffer(&mut image_buf, &image_arr);
 
-    print_elapsed_time();
-    // println!("timestamp: {:?}", image_buf);
+    // print_elapsed_time();
+    println!("timestamp: {:?}", image_buf);
     video_appsrc.push_buffer(image_buf).expect("Failed to push to image buffer");
 }
 
@@ -90,7 +91,7 @@ pub fn send_video_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>
 pub fn send_hud_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>) {
     let hud_appsrc = state.hud_appsrc.lock().unwrap();
     let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create hud gst buffer");
-    timestamp_buffer("hud", &mut image_buf, &image_arr);
+    timestamp_buffer(&mut image_buf, &image_arr);
     hud_appsrc.push_buffer(image_buf).expect("Failed to push to hud buffer");
 }
 
@@ -102,7 +103,7 @@ pub fn send_metadata_packet(state: State<utils::AppSharedState>, metadata: Metad
     let klv_appsrc = state.klv_appsrc.lock().unwrap();
 
     let mut klv_buf = gst::Buffer::with_size(klv.len()).expect("Failed to create klv gst buffer");
-    timestamp_buffer("klv", &mut klv_buf, &klv);
+    timestamp_buffer(&mut klv_buf, &klv);
 
     klv_appsrc.push_buffer(klv_buf).expect("Failed to push to klv buffer");
 
@@ -110,31 +111,18 @@ pub fn send_metadata_packet(state: State<utils::AppSharedState>, metadata: Metad
 
 
 // #[allow(dead_code)]
-fn timestamp_buffer(stream_id: &str, buffer: &mut gst::Buffer, data: &Vec<u8>){
+fn timestamp_buffer(buffer: &mut gst::Buffer, data: &Vec<u8>){
 
-    let mut timings = STREAM_TIMINGS.lock().unwrap();
-    let timing = timings.entry(stream_id.to_string()).or_insert_with(|| StreamTiming {
-        start_time: Instant::now(),
-        frame_count: 0,
-    });
+    let start_time = START_TIME.lock().unwrap();
+    let elapsed = start_time.elapsed();
 
-    // Calculate the PTS based on the frame count and known framerate
-    let pts: gst::ClockTime;
-    if stream_id == "klv" {
-        pts = gst::ClockTime::from_mseconds(timing.frame_count * KLV_FRAME_DURATION_MS);
-    } else {
-        pts = gst::ClockTime::from_mseconds(timing.frame_count * VIDEO_FRAME_DURATION_MS);
-    }
-    timing.frame_count += 1;
+    // Convert elapsed time to GST ClockTime
+    let pts = gst::ClockTime::from_nseconds(elapsed.as_nanos() as u64);
 
-    // Update the buffer properties
+    // Set PTS (and optionally DTS) for the buffer
     let buffer = buffer.get_mut().unwrap();
     buffer.set_pts(pts);
-    // buffer.set_pts(pts);
-    buffer.set_dts(pts); // DTS is often the same as PTS for decoded video frames
-    // buffer.set_duration(gst::ClockTime::from_mseconds(VIDEO_FRAME_DURATION_MS));
-    buffer.set_duration(gst::ClockTime::from_mseconds(0 as u64));
-
+    buffer.set_dts(pts);
 
     let _ = buffer.copy_from_slice(0, data);
 

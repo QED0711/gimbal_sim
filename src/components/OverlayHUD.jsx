@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react"
 import { useSpiccatoState } from "spiccato-react";
 import mainManager, { mainPaths } from "../state/main/mainManager";
+import { formatTime } from "../utils/general";
 
 const useScaleCanvas = (canvasRef) => {
     useLayoutEffect(() => {
@@ -53,6 +54,9 @@ const useUpdatePosition = (canvasRef, position, aircraft, gimbal) => {
         ctx.clearRect(0, 0, window.innerWidth / 2 - 50, window.innerHeight)
         ctx.font = "24px Arial";
         ctx.fillStyle = "cyan"
+
+        ctx.fillText(`mission time: ${formatTime(Math.round(performance.now()))}`, window.innerWidth / 4, 25);
+
         ctx.fillText(`LNG: ${position.lng.toFixed(5)}`, 10, 25) 
         ctx.fillText(`LAT: ${position.lat.toFixed(5)}`, 10, 50) 
         ctx.fillText(`ALT: ${position.alt.toFixed(2)} meters`, 10, 75) 

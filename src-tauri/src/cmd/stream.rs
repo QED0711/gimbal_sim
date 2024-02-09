@@ -2,6 +2,10 @@ use gst::Pipeline;
 use gstreamer as gst;
 use gstreamer_app as gst_app;
 use gstreamer::prelude::*;
+use tauri::State;
+
+use crate::utils;
+
 
 // See here: https://stackoverflow.com/questions/64983204/merge-two-appsrc-pipelines-into-1-mpeg-ts-stream
 
@@ -81,24 +85,25 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
         .field("format", "RGB")
         .field("width", &1280)
         .field("height", &720)
-        .field("framerate", &gst::Fraction::new(30, 1))
+        .field("framerate", &gst::Fraction::new(0, 1))
         .build();
 
     let videorate_caps = gst::caps::Caps::builder("video/x-raw")
-        .field("foramt", "RGB")
+        .field("format", "RGB")
         .field("width", 1280)
         .field("height", 720)
         .field("framerate", &gst::Fraction::new(30, 1))
         .build();
 
-    capsfilter_videorate_video.set_property("caps", &videorate_caps);
-    capsfilter_videorate_hud.set_property("caps", &videorate_caps);
-
+    
     capsfilter_video.set_property("caps", &jpegdec_caps);
     capsfilter_hud.set_property("caps", &jpegdec_caps);
     
-    videorate_video.set_property_from_str("max_rate", "30");
-    videorate_hud.set_property_from_str("max_rate", "30");
+    videorate_video.set_property_from_str("max-duplication-time", "100000000");
+    videorate_hud.set_property_from_str("max-duplication-time", "100000000");
+
+    capsfilter_videorate_video.set_property("caps", &videorate_caps);
+    capsfilter_videorate_hud.set_property("caps", &videorate_caps);
 
     compositor.set_property_from_str("background", "3");
     compositor.set_property_from_str("latency", "10");
@@ -213,7 +218,20 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
     ])
     .expect("failed to link tial of pipeline");
 
-
-
     return pipeline;
 }
+
+#[tauri::command]
+pub fn start_pipeline(state: State<utils::AppSharedState>) -> bool {
+    let pipeline = state.gst_pipeline.lock().unwrap();
+    pipeline.set_state(gst::State::Playing).expect("Failed to start pipeline");
+    return true
+}
+
+#[tauri::command]
+pub fn pause_pipeline(state: State<utils::AppSharedState>) -> bool {
+    let pipeline = state.gst_pipeline.lock().unwrap();
+    pipeline.set_state(gst::State::Paused).expect("Failed to pause pipeline");
+    return true
+}
+

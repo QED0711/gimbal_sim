@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import * as Cesium from "cesium";
 import { useSpiccatoState } from "spiccato-react";
 import mainManager, { mainPaths } from "../state/main/mainManager";
+import { invoke } from "@tauri-apps/api";
 
 export default function MapContainer() {
     // STATE
@@ -15,6 +16,17 @@ export default function MapContainer() {
     const [imageQuality, setImageQuality] = useState(0.3);
     const [fps, setFps] = useState(20);
 
+    // EVENTS
+    const handleRecordClick = () => {
+        setRecord(async (prevVal) => {
+            if(prevVal) {
+                console.log(prevVal)
+                const success = await invoke("pause_pipeline");
+                console.log({success});
+            }
+            return !prevVal
+        })
+    }
     // EFFECTS
     useEffect(() => {
         const exec = async () => {
@@ -100,13 +112,19 @@ export default function MapContainer() {
     }, [state.isPaused, state.map]);
 
     useEffect(() => {
-        clearInterval(window._recordingInterval);
-        clearInterval(window._metadataInterval);
-        if (record) {
-            window._recordingInterval = setInterval(() => { mainManager.methods.sendImage(imageQuality) }, 1000 / fps);
-            window._metadataInterval = setInterval(() => { mainManager.methods.sendMetadata() }, (1000 / fps) / 3); // metadata sent at 3 times the rate of video
-            // window._metadataInterval = setInterval(() => { mainManager.methods.sendMetadata() }, 1000 / fps); 
+        const exec = async () => {
+            clearInterval(window._recordingInterval);
+            clearInterval(window._metadataInterval);
+            if (record) {
+                const success = await invoke("start_pipeline");
+                console.log({success});
+                window._recordingInterval = setInterval(() => { mainManager.methods.sendImage(imageQuality) }, 1000 / fps);
+                window._metadataInterval = setInterval(() => { mainManager.methods.sendMetadata() }, (1000 / fps) / 3); // metadata sent at 3 times the rate of video
+                // window._metadataInterval = setInterval(() => { mainManager.methods.sendMetadata() }, 1000 / fps); 
+            }
         }
+
+        exec();
 
     }, [record, imageQuality, fps]);
 
@@ -115,7 +133,7 @@ export default function MapContainer() {
         <>
             <div id="map" className="w-screen h-screen"></div>
             <div className="fixed top-1 right-1 bg-gray-300 z-50 cursor-pointer">
-                <button className="bg-gray-100" onClick={() => setRecord((val) => !val)}>
+                <button className="bg-gray-100" onClick={handleRecordClick}>
                     {record ? "STOP" : "START"} RECORDING
                 </button>
                 <em className="block text-left text-sm text-black">udp://{window._initConfig.stream_address}:{window._initConfig.stream_port}</em>
