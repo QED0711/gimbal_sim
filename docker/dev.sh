@@ -4,7 +4,7 @@ COMMAND=${1:-bash}
 
 xhost + 
 
-docker run --rm -ti --network host \
+docker run --rm --gpus all -ti --network host \
     --name gimbal_sim_dev \
     -v $PWD/:/home/$(whoami)/app/ \
     -v /opt/gimbal.conf:/home/$(whoami)/app/src-tauri/gimbal.conf \

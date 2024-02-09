@@ -74,6 +74,7 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
     let capsfilter_convert = gst::ElementFactory::make("capsfilter").build().expect("Failed to build videoconvert capsfilter");
 
     let x264enc = gst::ElementFactory::make("x264enc").build().expect("failed to build x264enc");
+    // let x264enc = gst::ElementFactory::make("nvh264enc").build().expect("failed to build x264enc");
     let video_queue = gst::ElementFactory::make("queue").build().expect("failed to build videoqueue");
     let hud_queue = gst::ElementFactory::make("queue").build().expect("failed to build klvqueue");
     let mpegtsmux = gst::ElementFactory::make("mpegtsmux").build().expect("failed to build mpegtsmux");
