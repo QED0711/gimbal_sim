@@ -14,7 +14,6 @@ export default function MapContainer() {
     ]);
     const [record, setRecord] = useState(false);
     const [imageQuality, setImageQuality] = useState(0.3);
-    const [fps, setFps] = useState(20);
 
     // EVENTS
     const handleRecordClick = () => {
@@ -118,15 +117,15 @@ export default function MapContainer() {
             if (record) {
                 const success = await invoke("start_pipeline");
                 console.log({success});
-                window._recordingInterval = setInterval(() => { mainManager.methods.sendImage(imageQuality) }, 1000 / fps);
-                window._metadataInterval = setInterval(() => { mainManager.methods.sendMetadata() }, (1000 / fps) / 3); // metadata sent at 3 times the rate of video
+                window._recordingInterval = setInterval(() => { mainManager.methods.sendImage(imageQuality) }, 1000 / window._initConfig?.fps ?? 20);
+                window._metadataInterval = setInterval(() => { mainManager.methods.sendMetadata() }, (1000 / window._initConfig?.fps ?? 20) / 3); // metadata sent at 3 times the rate of video
                 // window._metadataInterval = setInterval(() => { mainManager.methods.sendMetadata() }, 1000 / fps); 
             }
         }
 
         exec();
 
-    }, [record, imageQuality, fps]);
+    }, [record, imageQuality]);
 
 
     return (
@@ -137,6 +136,7 @@ export default function MapContainer() {
                     {record ? "STOP" : "START"} RECORDING
                 </button>
                 <em className="block text-left text-sm text-black">udp://{window._initConfig.stream_address}:{window._initConfig.stream_port}</em>
+                <em className="block text-left text-sm text-black">fps: {window._initConfig.fps}</em>
                 <label>
                     Quality
                     <input
@@ -147,11 +147,6 @@ export default function MapContainer() {
                         value={imageQuality}
                         onChange={(e) => setImageQuality(parseFloat(e.target.value))}
                     />
-                </label>
-                <br />
-                <label>
-                    FPS
-                    <input type="number" min="1" value={fps} onChange={(e) => setFps(parseInt(e.target.value))} />
                 </label>
                 <br />
             </div>

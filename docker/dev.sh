@@ -1,15 +1,18 @@
 #!/bin/bash
 
 COMMAND=${1:-bash}
+source ./docker/.env
 
 xhost + 
 
 docker run --rm --gpus all -ti --network host \
     --name gimbal_sim_dev \
-    -v $PWD/:/home/$(whoami)/app/ \
-    -v /opt/gimbal.conf:/home/$(whoami)/app/src-tauri/gimbal.conf \
+    -v $PWD/:/home/$USERNAME/app/ \
+    -v /opt/gimbal.conf:/home/$USERNAME/app/src-tauri/gimbal.conf \
     -e DISPLAY=$DISPLAY \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
-    -e USERNAME=$(whoami) \
+    -e USERNAME=$USERNAME \
+    -e NVIDIA_VISIBLE_DEVICES=all \
+    -e NVIDIA_DRIVER_CAPABILITIES=video,compute,utility \
     gimbal_simulator:dev \
     $COMMAND

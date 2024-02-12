@@ -13,9 +13,6 @@ use gstreamer as gst;
 use serde::Deserialize;
 
 
-const VIDEO_FRAMERATE: u64 = 30;
-const VIDEO_FRAME_DURATION_MS: u64 = 1000 / VIDEO_FRAMERATE;
-const KLV_FRAME_DURATION_MS: u64 = VIDEO_FRAMERATE / 3;
 
 static START_TIME: Lazy<Mutex<Instant>> = Lazy::new(|| Mutex::new(Instant::now()));
 static LAST_CALL: Lazy<Mutex<Option<Instant>>> = Lazy::new(|| Mutex::new(None));
@@ -36,12 +33,6 @@ fn print_elapsed_time() {
 }
 
 
-struct StreamTiming {
-    start_time: Instant,
-    frame_count: u64,
-}
-
-static STREAM_TIMINGS: Lazy<Mutex<HashMap<String, StreamTiming>>> = Lazy::new(|| Mutex::new(HashMap::new()));
 
 #[derive(Debug, Deserialize)]
 #[allow(non_snake_case)]
@@ -89,6 +80,7 @@ pub fn send_video_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>
 
 #[tauri::command]
 pub fn send_hud_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>) {
+    println!("{:?}", image_arr);
     let hud_appsrc = state.hud_appsrc.lock().unwrap();
     let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create hud gst buffer");
     timestamp_buffer(&mut image_buf, &image_arr);

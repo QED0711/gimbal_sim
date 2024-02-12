@@ -9,7 +9,6 @@ mod klv;
 
 use std::{ sync::{Arc, Mutex}, env};
 use gstreamer as gst;
-use gstreamer::prelude::*;
 
 use utils::AppSharedState;
 use clap::Parser;
@@ -21,11 +20,12 @@ fn main() {
     // See here: https://stackoverflow.com/questions/64983204/merge-two-appsrc-pipelines-into-1-mpeg-ts-stream
 
     let args = Args::parse();
+    let username = env::var("USERNAME").expect("Could not get system username");
     println!("{:?}", args);
     env::set_var("RUST_BACKTRACE", "full");
     // env::set_var("GST_DEBUG", "*:WARN,*:ERROR");
-    // env::set_var("GST_DEBUG", "videorate:6");
-    env::set_var("GST_DEBUG_DUMP_DOT_DIR", "/home/qdizon/app");
+    // env::set_var("GST_DEBUG", "nv*:6");
+    env::set_var("GST_DEBUG_DUMP_DOT_DIR", format!("/home/{username}/app"));
 
     
     let config = parse_config();

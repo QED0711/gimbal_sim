@@ -1,6 +1,7 @@
 # FROM ubuntu:22.04
-FROM nvidia/cuda:12.0.0-devel-ubuntu22.04
+# FROM nvidia/cuda:12.0.0-devel-ubuntu22.04
 # https://catalog.ngc.nvidia.com/orgs/nvidia/containers/deepstream/tags
+FROM nvcr.io/nvidia/deepstream:6.4-gc-triton-devel
 
 ENV TZ="America/New_York"
 ENV DEBIAN_FRONTEND=noninteractive
@@ -29,10 +30,19 @@ RUN apt-get update && apt-get install -y \
 
 # ADD LOCAL USER
 # Step to check if the group exists and create it if it doesn't
-RUN groupadd --gid $GROUP_ID $USERNAME && \
-    useradd --uid $USER_ID --gid $GROUP_ID \
-    $USERNAME && \
-    echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+RUN if getent group $GROUP_ID ; then echo "Group $GROUP_ID already exists"; else groupadd --gid $GROUP_ID $USERNAME; fi
+# Always attempt to create the user, adding it to the existing or newly created group
+# Check if the user exists and create it if it doesn't
+RUN if getent passwd $USER_ID ; then \
+        echo "User with UID $USER_ID already exists"; \
+    else \
+        useradd --uid $USER_ID --gid $GROUP_ID --create-home $USERNAME; \
+    fi
+RUN echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers; 
+# RUN groupadd --gid $GROUP_ID $USERNAME && \
+#     useradd --uid $USER_ID --gid $GROUP_ID \
+#     $USERNAME && \
+#     echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 USER $USERNAME
 WORKDIR /home/$USERNAME
