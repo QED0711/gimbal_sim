@@ -70,6 +70,8 @@ pub struct Config {
     pub stream_address: String,
     pub stream_port: String, 
     pub fps: i32,
+    pub hud_fps: i32,
+    pub overlay_alpha: f32,
     pub ion_access_token: Option<String>, 
 
     pub mission_templates: Vec<MissionTemplate>,
@@ -92,6 +94,8 @@ impl Default for Config {
             stream_address: "127.0.0.1".to_string(),
             stream_port: "15000".to_string(),
             fps: 30,
+            hud_fps: 5,
+            overlay_alpha: 0.5,
             ion_access_token: None,
 
             mission_templates: vec![

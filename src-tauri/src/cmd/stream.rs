@@ -8,19 +8,30 @@ use crate::utils;
 
 
 // See here: https://stackoverflow.com/questions/64983204/merge-two-appsrc-pipelines-into-1-mpeg-ts-stream
+pub enum ImageType {
+    Jpeg,
+    Png
+}
 
-pub fn create_video_appsrc() -> gst_app::AppSrc {
+pub fn create_video_appsrc(image_type: ImageType) -> gst_app::AppSrc {
 
     let video_appsrc = gst::ElementFactory::make("appsrc")
         .build()
         .expect("Could not create video_appsrc element.")
         .dynamic_cast::<gst_app::AppSrc>()
         .expect("Failed to cast to Video AppSrc");
-    let video_caps = gst::caps::Caps::builder("image/jpeg")
-        .field("width", &1280)
-        .field("height", &720)
-        .field("framerate", &gst::Fraction::new(0, 1))
-        .build();
+    let video_caps = match (image_type) {
+        ImageType::Jpeg => gst::caps::Caps::builder("image/jpeg")
+            .field("width", &1280)
+            .field("height", &720)
+            .field("framerate", &gst::Fraction::new(0, 1))
+            .build(),
+        ImageType::Png => gst::caps::Caps::builder("image/png")
+            .field("width", &1280)
+            .field("height", &720)
+            .field("framerate", &gst::Fraction::new(0, 1))
+            .build(),
+    };
 
     video_appsrc.set_caps(Some(&video_caps));
 
@@ -65,12 +76,21 @@ pub fn pause_pipeline(state: State<utils::AppSharedState>) -> bool {
 }
 
 
-pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::AppSrc, klv_appsrc: &gst_app::AppSrc, out_host: &str, out_port: &str, fps: i32) -> Pipeline {
+pub fn create_pipeline(
+    video_appsrc: &gst_app::AppSrc, 
+    hud_appsrc: &gst_app::AppSrc, 
+    klv_appsrc: &gst_app::AppSrc, 
+    out_host: &str, out_port: 
+    &str, 
+    fps: i32, 
+    hud_fps: i32,
+    overlay_alpha: f32
+) -> Pipeline {
 
     let jpegparse_video = gst::ElementFactory::make("jpegparse").build().expect("failed to build jpegparse_video");
     let jpegdec_video = gst::ElementFactory::make("jpegdec").build().expect("failed to build jpegdec_video");
-    let jpegparse_hud = gst::ElementFactory::make("jpegparse").build().expect("failed to build jpegparse_hud");
-    let jpegdec_hud = gst::ElementFactory::make("jpegdec").build().expect("failed to build jpegdec_hud");
+    let pngparse_hud = gst::ElementFactory::make("pngparse").build().expect("failed to build pngparse_hud");
+    let pngdec_hud = gst::ElementFactory::make("pngdec").build().expect("failed to build pngdec_hud");
     
     let capsfilter_video = gst::ElementFactory::make("capsfilter").build().expect("Failed to build video capsfilter");
     let capsfilter_hud = gst::ElementFactory::make("capsfilter").build().expect("Failed to build hud capsfilter");
@@ -87,10 +107,9 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
     let compositor = gst::ElementFactory::make("compositor").build().expect("failed to build compositor");
     let capsfilter_convert = gst::ElementFactory::make("capsfilter").build().expect("Failed to build videoconvert capsfilter");
     
-    // let x264enc = gst::ElementFactory::make("x264enc").build().expect("failed to build x264enc");
-    let nvh264enc = gst::ElementFactory::make("nvh264enc").build().expect("failed to build x264enc");
+    let x264enc = gst::ElementFactory::make("x264enc").build().expect("failed to build x264enc");
+    // let nvh264enc = gst::ElementFactory::make("nvh264enc").build().expect("failed to build x264enc");
     let capsfilter_264 = gst::ElementFactory::make("capsfilter").build().expect("Failed to build 264 capsfilter");
-
 
     let video_queue = gst::ElementFactory::make("queue").build().expect("failed to build videoqueue");
     let hud_queue = gst::ElementFactory::make("queue").build().expect("failed to build klvqueue");
@@ -113,16 +132,21 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
         .field("framerate", &gst::Fraction::new(fps, 1))
         .build();
 
+    let videorate_hud_caps = gst::caps::Caps::builder("video/x-raw")
+        .field("format", "I420")
+        .field("width", 1280)
+        .field("height", 720)
+        .field("framerate", &gst::Fraction::new(hud_fps, 1))
+        .build();
+
     let h264_caps = gst::caps::Caps::builder("video/x-h264")
         .field("width", &1280)
         .field("height", &720)
         .field("framerate", &gst::Fraction::new(fps, 1))
         .build();
-
     
     capsfilter_video.set_property("caps", &jpegdec_caps);
     capsfilter_hud.set_property("caps", &jpegdec_caps);
-    
 
     videorate_video.set_property_from_str("max-duplication-time", "100000000");
     videorate_video.set_property_from_str("skip-to-first", "true");
@@ -130,7 +154,7 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
     videorate_hud.set_property_from_str("skip-to-first", "true");
 
     capsfilter_videorate_video.set_property("caps", &videorate_caps);
-    capsfilter_videorate_hud.set_property("caps", &videorate_caps);
+    capsfilter_videorate_hud.set_property("caps", &videorate_hud_caps);
 
     compositor.set_property_from_str("background", "3");
     compositor.set_property_from_str("latency", "10");
@@ -148,15 +172,15 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
     sinkpad_hud.set_property("ypos", 0);
     sinkpad_hud.set_property("width", 1280);
     sinkpad_hud.set_property("height", 720);
-    sinkpad_hud.set_property("alpha", 0.4);
+    sinkpad_hud.set_property_from_str("alpha",&format!("{overlay_alpha}"));
     sinkpad_hud.set_property_from_str("operator", "2");
 
     capsfilter_convert.set_property("caps", &videorate_caps);
 
-    // x264enc.set_property_from_str("tune", "zerolatency");
+    x264enc.set_property_from_str("tune", "zerolatency");
     // x264enc.set_property_from_str("speed-preset", "ultrafast");
-    // x264enc.set_property_from_str("key-int-max", "30");
-    nvh264enc.set_property_from_str("zerolatency", "true");
+    x264enc.set_property_from_str("key-int-max", "30");
+    // nvh264enc.set_property_from_str("zerolatency", "true");
 
     video_queue.set_property_from_str("max-size-buffers", "5");
     video_queue.set_property_from_str("max-size-time", "100000000");
@@ -182,8 +206,8 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
         &hud_appsrc.upcast_ref(),
         &jpegparse_video,
         &jpegdec_video,
-        &jpegparse_hud,
-        &jpegdec_hud,
+        &pngparse_hud,
+        &pngdec_hud,
         // &capsfilter_video,
         // &capsfilter_hud,
         // &capsfilter_convert,
@@ -200,7 +224,7 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
 
         &compositor,
         &capsfilter_convert,
-        &nvh264enc,
+        &x264enc,
         &capsfilter_264,
         &klv_appsrc.upcast_ref(),
         &mpegtsmux,
@@ -224,12 +248,13 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
 
     gst::Element::link_many(&[
         &hud_appsrc.upcast_ref(),
-        &jpegparse_hud,
-        &jpegdec_hud,
+        &pngparse_hud,
+        &pngdec_hud,
         &videoconvert_hud,
         // &hud_queue,
         &videorate_hud,
         &capsfilter_videorate_hud,
+        // &fdsink,
         &compositor,
     ])
     .expect("failed to link hud video pipeline");
@@ -244,7 +269,7 @@ pub fn create_pipeline(video_appsrc: &gst_app::AppSrc, hud_appsrc: &gst_app::App
         &compositor,
         &capsfilter_convert,
         // &videoconvert_video,
-        &nvh264enc,
+        &x264enc,
         &capsfilter_264,
         &mpegtsmux,
         &udpsink,

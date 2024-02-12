@@ -5,6 +5,7 @@ const stateSchema = {
     imageDimensions: { width: 1280, height: 720 },
     map: null,
     hud: null,
+    includeHud: true,
     isPaused: false,
 
     missions: initConfig.mission_templates ?? [],

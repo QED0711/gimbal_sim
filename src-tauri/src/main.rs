@@ -10,10 +10,10 @@ mod klv;
 use std::{ sync::{Arc, Mutex}, env};
 use gstreamer as gst;
 
-use utils::AppSharedState;
+use utils::{AppSharedState, start_image_processing_thread, start_hud_processing_thread};
 use clap::Parser;
 use config::{parse_config, retrieve_config, Args};
-use cmd::{data::{send_video_packet, send_hud_packet, send_metadata_packet}, stream::{create_video_appsrc, create_klv_appsrc, create_pipeline, start_pipeline, pause_pipeline}};
+use cmd::{data::{send_video_packet, send_hud_packet, send_metadata_packet}, stream::{ImageType, create_video_appsrc, create_klv_appsrc, create_pipeline, start_pipeline, pause_pipeline}};
 
 
 fn main() {
@@ -35,12 +35,12 @@ fn main() {
     gst::init().expect("Failed to init gstreamer");
 
     // Create the elements
-    let video_appsrc = create_video_appsrc();
-    let hud_appsrc = create_video_appsrc();
+    let video_appsrc = create_video_appsrc(ImageType::Jpeg);
+    let hud_appsrc = create_video_appsrc(ImageType::Png);
     let klv_appsrc = create_klv_appsrc();
 
     // Pipeline Setup
-    let pipeline = create_pipeline(&video_appsrc, &hud_appsrc, &klv_appsrc, &config.stream_address, &config.stream_port, config.fps);
+    let pipeline = create_pipeline(&video_appsrc, &hud_appsrc, &klv_appsrc, &config.stream_address, &config.stream_port, config.fps, config.hud_fps, config.overlay_alpha);
 
     if (args.gst_debug) {
         println!("DEBUGGING PIPELINE GRAPH");
@@ -55,11 +55,20 @@ fn main() {
         video_appsrc: Arc::new(Mutex::new(video_appsrc)),
         hud_appsrc: Arc::new(Mutex::new(hud_appsrc)),
         klv_appsrc: Arc::new(Mutex::new(klv_appsrc)),
-        config
+        config: config.clone(),
+        cur_image: Arc::new(Mutex::new(None)),
+        cur_overlay: Arc::new(Mutex::new(None)),
     };
 
+    let shared_state_arc = Arc::new(shared_state);
+
+    let video_rate = (1000.0 / config.fps as f64).round() as u64;
+    let hud_rate = (1000.0 / config.hud_fps as f64).round() as u64;
+    start_image_processing_thread(Arc::clone(&shared_state_arc), video_rate); 
+    start_hud_processing_thread(Arc::clone(&shared_state_arc), hud_rate);
+
     tauri::Builder::default()
-        .manage(shared_state)
+        .manage(Arc::clone(&shared_state_arc))
         .invoke_handler(tauri::generate_handler![
             start_pipeline,
             pause_pipeline,

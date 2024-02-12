@@ -11,6 +11,7 @@ export default function MapContainer() {
         mainPaths.isPaused,
         mainPaths.startPosition,
         mainPaths.entity,
+        mainPaths.includeHud
     ]);
     const [record, setRecord] = useState(false);
     const [imageQuality, setImageQuality] = useState(0.3);
@@ -18,10 +19,10 @@ export default function MapContainer() {
     // EVENTS
     const handleRecordClick = () => {
         setRecord(async (prevVal) => {
-            if(prevVal) {
+            if (prevVal) {
                 console.log(prevVal)
                 const success = await invoke("pause_pipeline");
-                console.log({success});
+                console.log({ success });
             }
             return !prevVal
         })
@@ -113,11 +114,13 @@ export default function MapContainer() {
     useEffect(() => {
         const exec = async () => {
             clearInterval(window._recordingInterval);
+            clearInterval(window._hudInterval);
             clearInterval(window._metadataInterval);
             if (record) {
                 const success = await invoke("start_pipeline");
-                console.log({success});
+                console.log({ success });
                 window._recordingInterval = setInterval(() => { mainManager.methods.sendImage(imageQuality) }, 1000 / window._initConfig?.fps ?? 20);
+                window._hudInterval = setInterval(() => { mainManager.methods.sendHud(imageQuality) }, 1000 / window._initConfig?.hud_fps ?? 5);
                 window._metadataInterval = setInterval(() => { mainManager.methods.sendMetadata() }, (1000 / window._initConfig?.fps ?? 20) / 3); // metadata sent at 3 times the rate of video
                 // window._metadataInterval = setInterval(() => { mainManager.methods.sendMetadata() }, 1000 / fps); 
             }
@@ -135,6 +138,10 @@ export default function MapContainer() {
                 <button className="bg-gray-100" onClick={handleRecordClick}>
                     {record ? "STOP" : "START"} RECORDING
                 </button>
+                <label>
+                    <input className="ml-2" type="checkbox" checked={state.includeHud} onChange={e => mainManager.setters.setIncludeHud(e.target.checked)} /> 
+                    HUD Overlay
+                </label>
                 <em className="block text-left text-sm text-black">udp://{window._initConfig.stream_address}:{window._initConfig.stream_port}</em>
                 <em className="block text-left text-sm text-black">fps: {window._initConfig.fps}</em>
                 <label>

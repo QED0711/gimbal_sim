@@ -69,22 +69,28 @@ pub struct Metadata {
 
 #[tauri::command]
 pub fn send_video_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>) {
-    let video_appsrc = state.video_appsrc.lock().unwrap();
-    let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create image gst buffer");
-    timestamp_buffer(&mut image_buf, &image_arr);
+    
+    let mut cur_image = state.cur_image.lock().unwrap();
+    *cur_image = Some(image_arr);
 
     // print_elapsed_time();
     // println!("timestamp: {:?}", image_buf);
-    video_appsrc.push_buffer(image_buf).expect("Failed to push to image buffer");
+
+    // let video_appsrc = state.video_appsrc.lock().unwrap();
+    // let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create image gst buffer");
+    // timestamp_buffer(&mut image_buf, &image_arr);
+    // video_appsrc.push_buffer(image_buf).expect("Failed to push to image buffer");
 }
 
 #[tauri::command]
 pub fn send_hud_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>) {
-    println!("{:?}", image_arr);
-    let hud_appsrc = state.hud_appsrc.lock().unwrap();
-    let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create hud gst buffer");
-    timestamp_buffer(&mut image_buf, &image_arr);
-    hud_appsrc.push_buffer(image_buf).expect("Failed to push to hud buffer");
+    let mut cur_overlay = state.cur_overlay.lock().unwrap();
+    *cur_overlay = Some(image_arr);
+
+    // let hud_appsrc = state.hud_appsrc.lock().unwrap();
+    // let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create hud gst buffer");
+    // timestamp_buffer(&mut image_buf, &image_arr);
+    // hud_appsrc.push_buffer(image_buf).expect("Failed to push to hud buffer");
 }
 
 #[tauri::command]
@@ -103,7 +109,7 @@ pub fn send_metadata_packet(state: State<utils::AppSharedState>, metadata: Metad
 
 
 // #[allow(dead_code)]
-fn timestamp_buffer(buffer: &mut gst::Buffer, data: &Vec<u8>){
+pub fn timestamp_buffer(buffer: &mut gst::Buffer, data: &Vec<u8>){
 
     let start_time = START_TIME.lock().unwrap();
     let elapsed = start_time.elapsed();

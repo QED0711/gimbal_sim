@@ -33,10 +33,10 @@ const methods = {
         await this.setters.setPosition({ lat, lng, alt });
 
         if (this.state.gimbal.isLocked && this.state.gimbal.target !== null) {
-                const heading = calcHeading({ lat, lng, alt }, this.state.gimbal.target);
-                const pitch = calcPitch({ lat, lng, alt }, this.state.gimbal.target);
-    
-                this.setters.setGimbalHeadingPitch(heading, pitch);
+            const heading = calcHeading({ lat, lng, alt }, this.state.gimbal.target);
+            const pitch = calcPitch({ lat, lng, alt }, this.state.gimbal.target);
+
+            this.setters.setGimbalHeadingPitch(heading, pitch);
         }
 
     },
@@ -74,18 +74,21 @@ const methods = {
             }
             reader.readAsArrayBuffer(blob);
         }, "image/jpeg", imageQuality);
+    },
 
+    sendHud(imageQuality) {
+        if (this.state.includeHud) {
+            this.state.hud.toBlob(blob => {
+                const reader = new FileReader();
 
-        this.state.hud.toBlob(blob => {
-            const reader = new FileReader();
-
-            reader.onload = async function() {
-                const arrayBuffer = reader.result;
-                const data = Array.from(new Uint8Array(arrayBuffer));
-                await invoke("send_hud_packet", {imageArr: data});
-            }
-            reader.readAsArrayBuffer(blob);
-        }, "image/jpeg", imageQuality);
+                reader.onload = async function () {
+                    const arrayBuffer = reader.result;
+                    const data = Array.from(new Uint8Array(arrayBuffer));
+                    await invoke("send_hud_packet", { imageArr: data });
+                }
+                reader.readAsArrayBuffer(blob);
+            }, "image/png", imageQuality);
+        }
     },
 
     async sendMetadata() {
