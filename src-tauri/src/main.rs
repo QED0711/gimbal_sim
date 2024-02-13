@@ -36,7 +36,7 @@ fn main() {
 
     // Create the elements
     let video_appsrc = create_video_appsrc(ImageType::Jpeg);
-    let hud_appsrc = create_video_appsrc(ImageType::Png);
+    let hud_appsrc = create_video_appsrc(ImageType::Jpeg);
     let klv_appsrc = create_klv_appsrc();
 
     // Pipeline Setup

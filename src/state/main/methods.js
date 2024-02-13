@@ -87,7 +87,7 @@ const methods = {
                     await invoke("send_hud_packet", { imageArr: data });
                 }
                 reader.readAsArrayBuffer(blob);
-            }, "image/png", imageQuality);
+            }, "image/jpeg", imageQuality);
         }
     },
 

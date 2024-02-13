@@ -1,7 +1,7 @@
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 use serde_yaml;
-use std::{fs::{File, OpenOptions}, io::{self, Write}, path::Path};
+use std::{fs::{File, OpenOptions}, io::{self, Write}, path::Path, sync::Arc};
 use tauri::State;
 use crate::utils::AppSharedState;
 
@@ -137,6 +137,6 @@ pub fn parse_config() -> Config {
 }
 
 #[tauri::command]
-pub fn retrieve_config(state: State<AppSharedState>) -> Config {
-    return state.config.clone()
+pub fn retrieve_config(state: State<Arc<AppSharedState>>) -> Config {
+    state.inner().config.clone()
 }

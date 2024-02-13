@@ -4,7 +4,7 @@ use super::super::utils;
 use std::time::{SystemTime, UNIX_EPOCH, Instant, Duration};
 use std::fs::OpenOptions;
 use std::io::{self, Write};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 use once_cell::sync::Lazy;
 
@@ -68,7 +68,7 @@ pub struct Metadata {
 
 
 #[tauri::command]
-pub fn send_video_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>) {
+pub fn send_video_packet(state: State<Arc<utils::AppSharedState>>, image_arr: Vec<u8>) {
     
     let mut cur_image = state.cur_image.lock().unwrap();
     *cur_image = Some(image_arr);
@@ -83,7 +83,7 @@ pub fn send_video_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>
 }
 
 #[tauri::command]
-pub fn send_hud_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>) {
+pub fn send_hud_packet(state: State<Arc<utils::AppSharedState>>, image_arr: Vec<u8>) {
     let mut cur_overlay = state.cur_overlay.lock().unwrap();
     *cur_overlay = Some(image_arr);
 
@@ -94,11 +94,11 @@ pub fn send_hud_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>) 
 }
 
 #[tauri::command]
-pub fn send_metadata_packet(state: State<utils::AppSharedState>, metadata: Metadata ) {
+pub fn send_metadata_packet(state: State<Arc<utils::AppSharedState>>, metadata: Metadata ) {
     let klv_metadata = MISB601::Klv::from(metadata);
     let klv = klv_metadata.encode_to_klv();
 
-    let klv_appsrc = state.klv_appsrc.lock().unwrap();
+    let klv_appsrc = state.inner().klv_appsrc.lock().unwrap();
 
     let mut klv_buf = gst::Buffer::with_size(klv.len()).expect("Failed to create klv gst buffer");
     timestamp_buffer(&mut klv_buf, &klv);

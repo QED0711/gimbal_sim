@@ -16,17 +16,6 @@ export default function MapContainer() {
     const [record, setRecord] = useState(false);
     const [imageQuality, setImageQuality] = useState(0.3);
 
-    // EVENTS
-    const handleRecordClick = () => {
-        setRecord(async (prevVal) => {
-            if (prevVal) {
-                console.log(prevVal)
-                const success = await invoke("pause_pipeline");
-                console.log({ success });
-            }
-            return !prevVal
-        })
-    }
     // EFFECTS
     useEffect(() => {
         const exec = async () => {
@@ -135,10 +124,10 @@ export default function MapContainer() {
         <>
             <div id="map" className="w-screen h-screen"></div>
             <div className="fixed top-1 right-1 bg-gray-300 z-50 cursor-pointer">
-                <button className="bg-gray-100" onClick={handleRecordClick}>
+                <button className="bg-gray-100" onClick={() => setRecord(r => !r)}>
                     {record ? "STOP" : "START"} RECORDING
                 </button>
-                <label>
+                <label className="block">
                     <input className="ml-2" type="checkbox" checked={state.includeHud} onChange={e => mainManager.setters.setIncludeHud(e.target.checked)} /> 
                     HUD Overlay
                 </label>
