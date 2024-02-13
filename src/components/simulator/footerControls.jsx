@@ -1,7 +1,7 @@
 // ============================= STATE ============================= 
 import { useSpiccatoState } from "spiccato-react"
-import mainManager from "../state/main/mainManager"
-import { betweenRange } from "../utils/general";
+import mainManager from "../../state/main/mainManager"
+import { betweenRange } from "../../utils/general";
 
 export default function FooterControls() {
     // STATE

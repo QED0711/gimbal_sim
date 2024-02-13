@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react"
 import { useSpiccatoState } from "spiccato-react";
-import mainManager, { mainPaths } from "../state/main/mainManager";
-import { formatTime } from "../utils/general";
+import mainManager, { mainPaths } from "../../state/main/mainManager";
+import { formatTime } from "../../utils/general";
 
 const useScaleCanvas = (canvasRef) => {
     useLayoutEffect(() => {

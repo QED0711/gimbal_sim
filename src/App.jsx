@@ -1,25 +1,24 @@
-import { useState, useEffect } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/tauri";
 import "./App.css";
-import mainManager, { mainPaths } from "./state/main/mainManager";
-import { useSpiccatoState } from "spiccato-react";
 
-import MapContainer from "./components/MapContainer";
-import ControlsContainer from "./components/controls/ControlsContainer";
-import OverlayHUD from "./components/OverlayHUD";
 import useWindowResize from "./hooks/useWindowResize";
-import FooterControls from "./components/footerControls";
+
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import SimulatorContainer from "./components/simulator/SimulatorContainer";
+import RoutePlannerContainer from "./components/routePlanner/RoutePlannerContainer";
+import EventManager from "./components/managers/EventManager";
 
 function App() {
   const size = useWindowResize();
 
   return (
     <div className="container">
-      <MapContainer />
-      <OverlayHUD />
-      <ControlsContainer />
-      <FooterControls />
+      <EventManager />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<SimulatorContainer />} />
+          <Route path="/route-planner" element={<RoutePlannerContainer />} />
+        </Routes>
+      </BrowserRouter>
     </div>
   );
 }

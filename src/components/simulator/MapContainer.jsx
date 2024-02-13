@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import * as Cesium from "cesium";
 import { useSpiccatoState } from "spiccato-react";
-import mainManager, { mainPaths } from "../state/main/mainManager";
+import mainManager, { mainPaths } from "../../state/main/mainManager";
 import { invoke } from "@tauri-apps/api";
+import { WebviewWindow } from '@tauri-apps/api/window';
+import {emit} from "@tauri-apps/api/event";
 
 export default function MapContainer() {
     // STATE
@@ -15,6 +17,25 @@ export default function MapContainer() {
     ]);
     const [record, setRecord] = useState(false);
     const [imageQuality, setImageQuality] = useState(0.3);
+
+    // EVENTS
+    const handleOpenRoutePlanner = () => {
+        const webview = new WebviewWindow("routePlanner", {
+            "url": "/route-planner",
+            "label": "route-planner",
+            "title": "Route Planner",
+            "fullscreen": false,
+            "resizable": true,
+            "width": 500,
+            "height": 500,
+        })
+        webview.once("tauri://created", function () {
+            console.log("CREATED NEW WINDOW");
+        })
+        webview.once('tauri://error', function (e) {
+            console.log(e)
+        })
+    }
 
     // EFFECTS
     useEffect(() => {
@@ -128,7 +149,7 @@ export default function MapContainer() {
                     {record ? "STOP" : "START"} RECORDING
                 </button>
                 <label className="block">
-                    <input className="ml-2" type="checkbox" checked={state.includeHud} onChange={e => mainManager.setters.setIncludeHud(e.target.checked)} /> 
+                    <input className="ml-2" type="checkbox" checked={state.includeHud} onChange={e => mainManager.setters.setIncludeHud(e.target.checked)} />
                     HUD Overlay
                 </label>
                 <em className="block text-left text-sm text-black">udp://{window._initConfig.stream_address}:{window._initConfig.stream_port}</em>
@@ -145,6 +166,9 @@ export default function MapContainer() {
                     />
                 </label>
                 <br />
+                <button onClick={handleOpenRoutePlanner}>Route Planner</button>
+                <nr/>
+                <button onClick={() => {emit("test", {message: "This is a test"})}}>EVENT</button>
             </div>
 
         </>

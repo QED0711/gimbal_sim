@@ -12,8 +12,14 @@ const mainManager = new Spiccato(stateSchema, {id: "main", enableWriteProtection
 // mainManager.connectToLocalStorage({ 
 //     persistKey: "main",
 //     providerID: "main",
-//     initializeFromLocalStorage: true,
-//     clearStorageOnUnload: false,
+//     initializeFromLocalStorage: false,
+//     clearStorageOnUnload: true,
+//     privateState: [
+//         mainManager.paths.map,
+//         mainManager.paths.hud,
+//     ],
+//     providerWindow: "main",
+//     subscriberWindows: ["route-planner"]
 // })
 
 mainManager.init(); // IMPORTANT: This must be called prior to addCustomGetters and addCustomSetters

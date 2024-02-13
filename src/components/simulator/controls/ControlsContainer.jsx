@@ -1,6 +1,6 @@
 import { useSpiccatoState } from "spiccato-react";
-import mainManager, { mainPaths } from "../../state/main/mainManager";
-import useKeyboardShortcuts from "../../hooks/useKeyboardShortcuts";
+import mainManager, { mainPaths } from "../../../state/main/mainManager";
+import useKeyboardShortcuts from "../../../hooks/useKeyboardShortcuts";
 
 export default function ControlsContainer() {
     const { state } = useSpiccatoState(mainManager, [mainPaths.aircraft]);
