@@ -1,7 +1,6 @@
 
 const setters = {
 
-    // your setters here...
 
 }
 

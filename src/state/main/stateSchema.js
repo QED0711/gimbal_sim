@@ -41,8 +41,12 @@ const stateSchema = {
             alt: initConfig.mission_templates?.[0]?.target_location?.alt ?? 0.0, 
             // alt: 0.00 
         }
-
     },
+
+    orbit: {
+        type: "no-orbit",
+        rate: 1000
+    }
 }
 
 export default stateSchema;

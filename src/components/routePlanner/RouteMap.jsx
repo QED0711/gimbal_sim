@@ -1,16 +1,45 @@
 import { useEffect } from 'react';
 import * as Cesium from 'cesium';
+// =================================== TUARI =================================== 
+import {emit} from '@tauri-apps/api/event';
 
 // =================================== STATE =================================== 
+import { useSpiccatoState } from 'spiccato-react';
 import plannerManager from '../../state/planner/plannerManager';
 
 // =================================== ICONS =================================== 
 import AircraftIcon from '../../assets/aircraft_icon.svg';
+import { calcHeading } from '../../utils/map';
+
+const useCanvasPointerEvents = (viewer) => {
+    useEffect(() => {
+        if(!!viewer) {
+            viewer.canvas.addEventListener("pointerup", e => {
+                const mapMode = plannerManager.getters.getMapMode();
+                if(mapMode === "waypoint") {
+                    const waypoint = plannerManager.getters.getCoordinateAtPixel({x: e.clientX, y: e.clientY})
+                    const curPosition = plannerManager.getters.getPosition();
+
+                    const heading = calcHeading(curPosition, waypoint);
+                    if(!!heading) {
+                        emit("waypointHeading", Math.round(heading));
+                    }
+
+                    plannerManager.setters.setHeadingWaypoint(waypoint);
+                    plannerManager.setters.setMapMode("drag");
+                    
+                }
+            })
+        }
+    }, [viewer])
+}
 
 export default function RouteMap() {
-    // const {state: plannerState} = useSpiccatoState(plannerManager, [])
+    const {state} = useSpiccatoState(plannerManager, [plannerManager.paths.map])
 
     // EFFECTS
+
+    useCanvasPointerEvents(state.map)
     // map initialization
     useEffect(() => {
         const exec = async () => {
@@ -74,6 +103,25 @@ export default function RouteMap() {
                 }
             })
 
+            const waypointEntity = viewer.entities.add({
+                position: new Cesium.CallbackProperty(() => {
+                    const waypoint = plannerManager.getters.getHeadingWaypoint();
+                    if(!!waypoint) {
+                        return Cesium.Cartesian3.fromDegrees(waypoint.lng, waypoint.lat)
+                    } else {
+                        return Cesium.Cartesian3.fromDegrees(0.0, 0.0);
+                    }
+                }, false),
+                show: new Cesium.CallbackProperty(() => !!plannerManager.getters.getHeadingWaypoint(), false),
+                point: {
+                    pixelSize: 10,
+                    color: Cesium.Color.BLUE,
+                    outlineColor: Cesium.Color.BLACK,
+                    outlineWidth: 2
+                }
+
+            })
+
 
             await new Promise(r => setTimeout(r, 1000));
             const position = plannerManager.getters.getPosition();
@@ -84,6 +132,11 @@ export default function RouteMap() {
         exec();
 
     }, [])
+
+
+    useEffect(() => {
+
+    }, [state.map])
 
     return (
         <div id="route-map" className='w-screen h-screen overflow-y-hidden'></div>

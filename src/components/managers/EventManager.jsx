@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { useEffect } from "react"
 import { useSpiccatoState } from "spiccato-react";
 import plannerManager from '../../state/planner/plannerManager';
+import mainManager from "../../state/main/mainManager";
 
 export default function EventManager() {
 
@@ -12,6 +13,15 @@ export default function EventManager() {
             let events;
             switch (window.location.pathname) {
                 case "/":
+                    events = {
+                        waypointHeading({payload}){
+                            mainManager.setters.setAircraft_heading(payload);
+                        },
+
+                        orbitTypeChange({payload}) {
+                            mainManager.setters.setOrbit_type(payload);
+                        }
+                    }
                     break;
                 case "/route-planner":
                     events = {
@@ -25,6 +35,10 @@ export default function EventManager() {
 
                         targetUpdate({payload}) {
                             plannerManager.setters.setTarget(payload);
+                        },
+
+                        orbitUpdate({payload}) {
+                            plannerManager.setters.setOrbit(payload)
                         }
                     }
                     break;

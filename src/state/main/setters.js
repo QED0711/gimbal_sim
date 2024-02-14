@@ -1,5 +1,6 @@
 import * as Cesium from 'cesium'
 import { mainPaths } from "./mainManager";
+import {emit} from '@tauri-apps/api/event'
 
 const setters = {
     togglePause() {

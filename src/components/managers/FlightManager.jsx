@@ -7,15 +7,20 @@ export default function FlightManager(){
     const {state}  = useSpiccatoState(mainManager, [
         mainManager.paths.position,
         mainManager.paths.aircraft,
+        mainManager.paths.orbit
     ]);
 
     useEffect(() => {
-        emit("positionUpdate", state.position)
+        emit("positionUpdate", state.position);
     }, [state.position] )
 
     useEffect(() => {
-        emit("aircraftUpdate", state.aircraft)
+        emit("aircraftUpdate", state.aircraft);
     }, [state.aircraft] )
+
+    useEffect(() => {
+        emit("orbitUpdate", state.orbit);
+    }, [state.orbit])
 
     return <></>
 }
