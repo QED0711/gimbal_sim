@@ -2,9 +2,10 @@ import { useEffect } from 'react';
 import * as Cesium from 'cesium';
 
 // =================================== STATE =================================== 
-import { useSpiccatoState } from 'spiccato-react';
-import mainManager from '../../state/main/mainManager';
 import plannerManager from '../../state/planner/plannerManager';
+
+// =================================== ICONS =================================== 
+import AircraftIcon from '../../assets/aircraft_icon.svg';
 
 export default function RouteMap() {
     // const {state: plannerState} = useSpiccatoState(plannerManager, [])
@@ -30,39 +31,59 @@ export default function RouteMap() {
                 navigationInstructionsInitiallyVisible: false,
                 scene3DOnly: false, // Use a 3D only scene mode
                 sceneMode: Cesium.SceneMode.SCENE2D,
-                creditContainer: undefined, // Specify an element to place the Cesium credit text
+                // creditContainer: "<div>CartoDB</div>", // Specify an element to place the Cesium credit text
             })
 
 
             const imageryProvider = new Cesium.UrlTemplateImageryProvider({
-                url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
             });
             viewer.imageryLayers.addImageryProvider(imageryProvider);
-            debugger
+
+            const stareLine = viewer.entities.add({
+                polyline: {
+                    positions: new Cesium.CallbackProperty(() => {
+                        const position = plannerManager.getters.getPosition();
+                        const target = plannerManager.getters.getTarget();
+                        return Cesium.Cartesian3.fromDegreesArray([
+                            position.lng, position.lat, target.lng, target.lat
+                        ])
+                    }, false),
+                    material: Cesium.Color.LAWNGREEN,
+                    width: 2
+                }
+            })
+
             const aircraftEntity = viewer.entities.add({
                 position: new Cesium.CallbackProperty(() => {
                     const position = plannerManager.getters.getPosition();
-                    // console.log({position})
                     return Cesium.Cartesian3.fromDegrees(position.lng, position.lat, 10)
                 }, false),
-                ellipsoid: {
-                    radii: new Cesium.Cartesian3(100.0, 100.0, 100.0),
-                    material: Cesium.Color.RED.withAlpha(1.0),
-                },
+                billboard: {
+                    image: AircraftIcon,
+                    scale: 0.03,
+                    rotation: new Cesium.CallbackProperty(() => {
+                        const aircraft = plannerManager.getters.getAircraft();
+                        return Cesium.Math.toRadians(360 - aircraft.heading)
+                    }, false),
+                    pixelOffset: new Cesium.Cartesian2(0,0),
+                    eyeOffset: new Cesium.Cartesian3(0.0, 0.0, 0.0),
+                    horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+                    verticalOrigin: Cesium.VerticalOrigin.CENTER,
+                    heightReference: Cesium.HeightReference.NONE,
+                }
             })
+
 
             await new Promise(r => setTimeout(r, 1000));
             const position = plannerManager.getters.getPosition();
             viewer.camera.flyTo({ destination: Cesium.Cartesian3.fromDegrees(position.lng, position.lat, 5000), duration: 0 })
+
+            plannerManager.setters.setMap(viewer);
         }
         exec();
 
     }, [])
-
-    // position tracking
-    // useEffect(() => {
-    //     console.log(plannerState.position)
-    // }, [plannerState.position])
 
     return (
         <div id="route-map" className='w-screen h-screen overflow-y-hidden'></div>

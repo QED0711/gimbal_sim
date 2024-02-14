@@ -16,7 +16,15 @@ export default function EventManager() {
                 case "/route-planner":
                     events = {
                         positionUpdate({ event, payload }) {
-                            plannerManager.setters.setPosition(payload)
+                            plannerManager.setters.setPosition(payload);
+                        },
+
+                        aircraftUpdate({payload}) {
+                            plannerManager.setters.setAircraft(payload);
+                        },
+
+                        targetUpdate({payload}) {
+                            plannerManager.setters.setTarget(payload);
                         }
                     }
                     break;

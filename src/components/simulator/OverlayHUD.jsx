@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from "react"
 import { useSpiccatoState } from "spiccato-react";
 import mainManager, { mainPaths } from "../../state/main/mainManager";
 import { formatTime } from "../../utils/general";
+import { emit } from "@tauri-apps/api/event";
 
 const useScaleCanvas = (canvasRef) => {
     useLayoutEffect(() => {
@@ -75,6 +76,7 @@ const useUpdatePosition = (canvasRef, position, aircraft, gimbal) => {
         ctx.fillText(`TGT LNG: ${centerCoord?.lng?.toFixed?.(5) ?? "--"}°`, 10, 300) 
         ctx.fillText(`TGT LAT: ${centerCoord?.lat?.toFixed?.(5) ?? "--"}°`, 10, 325) 
         ctx.fillText(`TGT ALT: ${centerCoord?.alt?.toFixed?.(2) ?? "--"} meters`, 10, 350) 
+        emit("targetUpdate", centerCoord);
         // ctx.fillText(`TGT LAT: ${gimbal.range.toFixed(2)}°`, 10, 250) 
         
     }, [position, aircraft]) 

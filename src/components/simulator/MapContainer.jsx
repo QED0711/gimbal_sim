@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
 import * as Cesium from "cesium";
-import { useSpiccatoState } from "spiccato-react";
-import mainManager, { mainPaths } from "../../state/main/mainManager";
+
+// ========================== TAURI ========================== 
 import { invoke } from "@tauri-apps/api";
 import { WebviewWindow } from '@tauri-apps/api/window';
-import {emit} from "@tauri-apps/api/event";
+
+// ========================== STATE ========================== 
+import { useSpiccatoState } from "spiccato-react";
+import mainManager, { mainPaths } from "../../state/main/mainManager";
+
+// ========================== ICONS ========================== 
+import { FaMapLocationDot } from "react-icons/fa6";
+
 
 export default function MapContainer() {
     // STATE
@@ -26,8 +33,8 @@ export default function MapContainer() {
             "title": "Route Planner",
             "fullscreen": false,
             "resizable": true,
-            "width": 500,
-            "height": 500,
+            "width": 800,
+            "height": 600,
         })
         webview.once("tauri://created", function () {
             console.log("CREATED NEW WINDOW");
@@ -166,9 +173,9 @@ export default function MapContainer() {
                     />
                 </label>
                 <br />
-                <button onClick={handleOpenRoutePlanner}>Route Planner</button>
-                <nr/>
-                <button onClick={() => {emit("test", {message: "This is a test"})}}>EVENT</button>
+                <button onClick={handleOpenRoutePlanner} className="px-2 cursor-pointer">
+                    <FaMapLocationDot size={"2rem"} className="cursor-pointer"/>
+                </button>
             </div>
 
         </>
