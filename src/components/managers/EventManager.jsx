@@ -1,7 +1,9 @@
-import { appWindow } from "@tauri-apps/api/window";
-import { listen } from "@tauri-apps/api/event";
 import { useEffect } from "react"
-import { useSpiccatoState } from "spiccato-react";
+
+// ========================== TAURI ========================== 
+import { listen, emit } from "@tauri-apps/api/event";
+
+// ========================== STATE ========================== 
 import plannerManager from '../../state/planner/plannerManager';
 import mainManager from "../../state/main/mainManager";
 
@@ -14,6 +16,11 @@ export default function EventManager() {
             switch (window.location.pathname) {
                 case "/":
                     events = {
+                        initRequest(){
+                            emit("aircraftUpdate", mainManager.state.aircraft);
+                            emit("orbitUpdate", mainManager.state.orbit);
+                        },
+
                         waypointHeading({payload}){
                             mainManager.setters.setAircraft_heading(payload);
                         },
@@ -25,6 +32,7 @@ export default function EventManager() {
                     break;
                 case "/route-planner":
                     events = {
+
                         positionUpdate({ event, payload }) {
                             plannerManager.setters.setPosition(payload);
                         },

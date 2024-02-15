@@ -52,9 +52,10 @@ const useUpdatePosition = (canvasRef, position, aircraft, gimbal) => {
     useLayoutEffect(() => {
         const ctx = canvasRef.current.getContext("2d");
         const fov = mainManager.getters.getFov()?.hfov ?? 0.0 
+        const includeHud = mainManager.getters.getIncludeHud();
         ctx.clearRect(0, 0, window.innerWidth / 2 - 50, window.innerHeight)
         ctx.font = "24px Arial";
-        ctx.fillStyle = "cyan"
+        ctx.fillStyle = includeHud ? "cyan" : "transparent";
 
         ctx.fillText(`mission time: ${formatTime(Math.round(performance.now()))}`, window.innerWidth / 4, 25);
 

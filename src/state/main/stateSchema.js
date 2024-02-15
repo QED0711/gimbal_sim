@@ -5,7 +5,7 @@ const stateSchema = {
     imageDimensions: { width: 1280, height: 720 },
     map: null,
     hud: null,
-    includeHud: true,
+    includeHud: false,
     isPaused: false,
 
     missions: initConfig.mission_templates ?? [],
@@ -44,8 +44,8 @@ const stateSchema = {
     },
 
     orbit: {
-        type: "no-orbit",
-        rate: 1000
+        type: initConfig.mission_templates?.[0]?.orbit?.type ?? "no-orbit",
+        rate: initConfig.mission_templates?.[0]?.orbit?.rate * 1000 ?? 1000,
     }
 }
 

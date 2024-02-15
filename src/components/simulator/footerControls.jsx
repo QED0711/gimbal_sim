@@ -76,7 +76,7 @@ export default function FooterControls() {
 
     return (
         <>
-            <div className="fixed bottom-1 left-1 z-50 grid grid-cols-3 gap-2 p-1 rounded-md bg-gray-400">
+            <div className="fixed bottom-1 left-1 z-50 grid grid-cols-3 gap-2 p-1 rounded-md bg-gray-300">
                 <label className="w-16" onKeyDown={e => e.stopPropagation()} onKeyUp={e => e.stopPropagation()}>
                     <p className="text-sm font-bold">Heading</p>
                     <input className="px-1 w-full rounded-sm" type="number" value={state.aircraft.heading} onChange={handleHeadingChange} min={-1} max={360}/>
@@ -89,7 +89,7 @@ export default function FooterControls() {
                     <p className="text-sm font-bold">Speed</p>
                     <input className="px-1 w-full rounded-sm" type="number" value={state.aircraft.velocity * 2.23694} onChange={handleSpeedChange} step={1} min={0} max={9999}/>
                 </label>
-
+                <hr className="col-span-3"/>
                 <label className="col-span-2" onKeyDown={e => e.stopPropagation()} onKeyUp={e => e.stopPropagation()}>
                     <p className="text-sm font-bold">Orbit</p>
                     <select value={state.orbit.type} onChange={handleOrbitTypeChange}>

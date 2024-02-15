@@ -81,14 +81,6 @@ export default function MapContainer() {
             });
             viewer.imageryLayers.addImageryProvider(imageryProvider);
 
-            // const terrain = !!window._initConfig.terrain_provider_url
-            //     ? await Cesium.CesiumTerrainProvider.fromUrl(window._initConfig.terrain_provider_url, {requestVertexNormals: true})
-            //     : new Cesium.EllipsoidTerrainProvider();
-
-            // console.log("TERRAIN", terrain)
-            // viewer.terrainProvider = terrain;
-
-
             viewer.camera.frustum.fov = Cesium.Math.toRadians(60.0); // set the default fov
 
             mainManager.setters.setMap(viewer);
@@ -151,19 +143,21 @@ export default function MapContainer() {
     return (
         <>
             <div id="map" className="w-screen h-screen"></div>
-            <div className="fixed top-1 right-1 bg-gray-300 z-50 cursor-pointer">
-                <button className="bg-gray-100" onClick={() => setRecord(r => !r)}>
+            <div className="fixed top-1 right-1 bg-gray-300 z-50 p-1 rounded-md cursor-pointer">
+                <button className="bg-gray-100 px-1 rounded-sm shadow-sm shadow-black" onClick={() => setRecord(r => !r)}>
                     {record ? "STOP" : "START"} RECORDING
                 </button>
+                <em className="block text-left text-sm text-black">udp://{window._initConfig.stream_address}:{window._initConfig.stream_port}</em>
+                <em className="block text-left text-sm text-black">fps: {window._initConfig.fps}</em>
+                <hr/>
                 <label className="block">
                     <input className="ml-2" type="checkbox" checked={state.includeHud} onChange={e => mainManager.setters.setIncludeHud(e.target.checked)} />
                     HUD Overlay
                 </label>
-                <em className="block text-left text-sm text-black">udp://{window._initConfig.stream_address}:{window._initConfig.stream_port}</em>
-                <em className="block text-left text-sm text-black">fps: {window._initConfig.fps}</em>
                 <label>
                     Quality
                     <input
+                        className="ml-1 mb-1 px-1 rounded-sm"
                         type="number"
                         min="0.1"
                         max="1.0"
@@ -172,9 +166,9 @@ export default function MapContainer() {
                         onChange={(e) => setImageQuality(parseFloat(e.target.value))}
                     />
                 </label>
-                <br />
-                <button onClick={handleOpenRoutePlanner} className="px-2 cursor-pointer">
-                    <FaMapLocationDot size={"2rem"} className="cursor-pointer"/>
+                <hr />
+                <button onClick={handleOpenRoutePlanner} className="px-2 mt-1 bg-gray-100 rounded-sm shadow-sm shadow-black cursor-pointer">
+                    <FaMapLocationDot size={"2rem"} className="inline-block cursor-pointer "/> Planner
                 </button>
             </div>
 

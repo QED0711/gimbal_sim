@@ -186,18 +186,21 @@ const setters = {
                 },
                 isLocked: !!mission.target_lock
             }
+            const orbit = mission.orbit;
             return [
                 {
                     selectedMissionIndex: missionIdx,
                     position,
                     aircraft,
                     gimbal,
+                    orbit,
                 },
                 [
                     this.paths.selectedMissionIndex,
                     this.paths.position,
                     this.paths.aircraft,
                     this.paths.gimbal,
+                    this.path.orbit,
                 ]
             ]
         })
