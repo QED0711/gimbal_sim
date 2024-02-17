@@ -65,7 +65,7 @@ export default function RouteMap() {
 
 
             const imageryProvider = new Cesium.UrlTemplateImageryProvider({
-                url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                url: window._initConfig.vector_tile_url ?? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
             });
             viewer.imageryLayers.addImageryProvider(imageryProvider);
 

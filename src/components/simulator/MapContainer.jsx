@@ -77,7 +77,7 @@ export default function MapContainer() {
             });
 
             const imageryProvider = new Cesium.UrlTemplateImageryProvider({
-                url: "http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}",
+                url: window._initConfig.background_tile_url ?? "http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}",
             });
             viewer.imageryLayers.addImageryProvider(imageryProvider);
 

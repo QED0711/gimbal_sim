@@ -91,6 +91,8 @@ pub struct Config {
     pub hud_fps: i32,
     pub overlay_alpha: f32,
     pub ion_access_token: Option<String>, 
+    pub background_tile_url: Option<String>,
+    pub vector_tile_url: Option<String>,
 
     pub mission_templates: Vec<MissionTemplate>,
 }
@@ -106,6 +108,8 @@ impl Default for Config {
             hud_fps: 5,
             overlay_alpha: 0.5,
             ion_access_token: None,
+            background_tile_url: None, 
+            vector_tile_url: None, 
 
             mission_templates: vec![
                 MissionTemplate::default()

@@ -9,7 +9,9 @@ const methods = {
             destination: Cesium.Cartesian3.fromDegrees(this.state.position.lng, this.state.position.lat),
             duration: 0
         })
-    }
+    },
+
+    
 
 }
 
