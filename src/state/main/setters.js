@@ -200,7 +200,7 @@ const setters = {
                     this.paths.position,
                     this.paths.aircraft,
                     this.paths.gimbal,
-                    this.path.orbit,
+                    this.paths.orbit,
                 ]
             ]
         })
