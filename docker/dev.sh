@@ -14,5 +14,7 @@ docker run --rm --gpus all -ti --network host \
     -e USERNAME=$USERNAME \
     -e NVIDIA_VISIBLE_DEVICES=all \
     -e NVIDIA_DRIVER_CAPABILITIES=video,compute,utility \
+    --device /dev/input/js0:/dev/input/js0 \
+    --device /dev/input/event28:/dev/input/event28 \
     gimbal_simulator:dev \
     $COMMAND

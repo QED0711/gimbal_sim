@@ -13,7 +13,7 @@ use gstreamer as gst;
 use utils::{AppSharedState, start_image_processing_thread, start_hud_processing_thread};
 use clap::Parser;
 use config::{parse_config, retrieve_config, Args};
-use cmd::{data::{send_video_packet, send_hud_packet, send_metadata_packet}, stream::{ImageType, create_video_appsrc, create_klv_appsrc, create_pipeline, start_pipeline, pause_pipeline}};
+use cmd::{data::{send_video_packet, send_hud_packet, send_metadata_packet}, stream::{ImageType, create_video_appsrc, create_klv_appsrc, create_pipeline_simple, create_pipeline, start_pipeline, pause_pipeline}};
 
 
 fn main() {
@@ -40,7 +40,8 @@ fn main() {
     let klv_appsrc = create_klv_appsrc();
 
     // Pipeline Setup
-    let pipeline = create_pipeline(&video_appsrc, &hud_appsrc, &klv_appsrc, &config.stream_address, &config.stream_port, config.fps, config.hud_fps, config.overlay_alpha);
+    let pipeline = create_pipeline_simple(&video_appsrc, &klv_appsrc, &config.stream_address, &config.stream_port);
+    // let pipeline = create_pipeline(&video_appsrc, &hud_appsrc, &klv_appsrc, &config.stream_address, &config.stream_port, config.fps, config.hud_fps, config.overlay_alpha);
 
     if (args.gst_debug) {
         println!("DEBUGGING PIPELINE GRAPH");
@@ -77,6 +78,7 @@ fn main() {
             send_metadata_packet,
             retrieve_config,
         ])
+        .plugin(tauri_plugin_gamepad::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

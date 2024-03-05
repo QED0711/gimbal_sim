@@ -87,6 +87,14 @@ const getters = {
         }
 
         return metadata;
+    },
+
+    getGamepads(){
+        const gamepads = navigator.getGamepads?.();
+        console.log({gamepads});
+        if(gamepads && gamepads.length !== this.state.gamepads.length) {
+            this.setters.setGamepads(gamepads) 
+        }
     }
 
 }

@@ -3,6 +3,7 @@ import { useSpiccatoState } from "spiccato-react";
 import mainManager, { mainPaths } from "../../state/main/mainManager";
 import { formatTime } from "../../utils/general";
 import { emit } from "@tauri-apps/api/event";
+import { FaLock } from "react-icons/fa6";
 
 const useScaleCanvas = (canvasRef) => {
     useLayoutEffect(() => {
@@ -21,7 +22,7 @@ const useScaleCanvas = (canvasRef) => {
 const useDrawCenterReticule = (canvasRef) => {
     useLayoutEffect(() => {
         const ctx = canvasRef.current.getContext("2d");
-        const center = {x: window.innerWidth / 2, y: window.innerHeight / 2};
+        const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
 
         ctx.lineWidth = 5;
         ctx.strokeStyle = "cyan";
@@ -30,17 +31,17 @@ const useDrawCenterReticule = (canvasRef) => {
         ctx.moveTo(center.x, center.y - 10);
         ctx.lineTo(center.x, center.y - 40);
         ctx.stroke();
-        
+
         ctx.beginPath();
         ctx.moveTo(center.x + 10, center.y);
         ctx.lineTo(center.x + 40, center.y);
         ctx.stroke();
-        
+
         ctx.beginPath();
         ctx.moveTo(center.x, center.y + 10);
         ctx.lineTo(center.x, center.y + 40);
         ctx.stroke();
-        
+
         ctx.beginPath();
         ctx.moveTo(center.x - 10, center.y);
         ctx.lineTo(center.x - 40, center.y);
@@ -51,7 +52,7 @@ const useDrawCenterReticule = (canvasRef) => {
 const useUpdatePosition = (canvasRef, position, aircraft, gimbal) => {
     useLayoutEffect(() => {
         const ctx = canvasRef.current.getContext("2d");
-        const fov = mainManager.getters.getFov()?.hfov ?? 0.0 
+        const fov = mainManager.getters.getFov()?.hfov ?? 0.0
         const includeHud = mainManager.getters.getIncludeHud();
         ctx.clearRect(0, 0, window.innerWidth / 2 - 50, window.innerHeight)
         ctx.font = "24px Arial";
@@ -59,32 +60,32 @@ const useUpdatePosition = (canvasRef, position, aircraft, gimbal) => {
 
         ctx.fillText(`mission time: ${formatTime(Math.round(performance.now()))}`, window.innerWidth / 4, 25);
 
-        ctx.fillText(`LNG: ${position.lng.toFixed(5)}`, 10, 25) 
-        ctx.fillText(`LAT: ${position.lat.toFixed(5)}`, 10, 50) 
-        ctx.fillText(`ALT: ${position.alt.toFixed(2)} meters`, 10, 75) 
+        ctx.fillText(`LNG: ${position.lng.toFixed(5)}`, 10, 25)
+        ctx.fillText(`LAT: ${position.lat.toFixed(5)}`, 10, 50)
+        ctx.fillText(`ALT: ${position.alt.toFixed(2)} meters`, 10, 75)
 
-        ctx.fillText(`PITCH: ${aircraft.pitch}°`, 10, 125) 
-        ctx.fillText(`HEADING: ${aircraft.heading}°`, 10, 150) 
-        ctx.fillText(`SPEED: ${(aircraft.velocity * 2.237).toFixed(2)} mph`, 10, 175) 
+        ctx.fillText(`PITCH: ${aircraft.pitch}°`, 10, 125)
+        ctx.fillText(`HEADING: ${aircraft.heading}°`, 10, 150)
+        ctx.fillText(`SPEED: ${(aircraft.velocity * 2.237).toFixed(2)} mph`, 10, 175)
 
-        ctx.fillText(`GIMBAL PITCH: ${gimbal.pitch.toFixed(2)}°`, 10, 200) 
-        ctx.fillText(`GIMBAL HEADING: ${gimbal.heading.toFixed(2)}°`, 10, 225) 
-        ctx.fillText(`GIMBAL FOV: ${fov.toFixed(2)}°`, 10, 250) 
-        
+        ctx.fillText(`GIMBAL PITCH: ${gimbal.pitch.toFixed(2)}°`, 10, 200)
+        ctx.fillText(`GIMBAL HEADING: ${gimbal.heading.toFixed(2)}°`, 10, 225)
+        ctx.fillText(`GIMBAL FOV: ${fov.toFixed(2)}°`, 10, 250)
+
         // ctx.fillText(`GIMBAL ZOOM: ${gimbal.range.toFixed(2)}°`, 10, 250) 
-        
+
         const centerCoord = mainManager.getters.getCoordinateAtPixel({});
-        ctx.fillText(`TGT LNG: ${centerCoord?.lng?.toFixed?.(5) ?? "--"}°`, 10, 300) 
-        ctx.fillText(`TGT LAT: ${centerCoord?.lat?.toFixed?.(5) ?? "--"}°`, 10, 325) 
-        ctx.fillText(`TGT ALT: ${centerCoord?.alt?.toFixed?.(2) ?? "--"} meters`, 10, 350) 
+        ctx.fillText(`TGT LNG: ${centerCoord?.lng?.toFixed?.(5) ?? "--"}°`, 10, 300)
+        ctx.fillText(`TGT LAT: ${centerCoord?.lat?.toFixed?.(5) ?? "--"}°`, 10, 325)
+        ctx.fillText(`TGT ALT: ${centerCoord?.alt?.toFixed?.(2) ?? "--"} meters`, 10, 350)
         emit("targetUpdate", centerCoord);
         // ctx.fillText(`TGT LAT: ${gimbal.range.toFixed(2)}°`, 10, 250) 
-        
-    }, [position, aircraft]) 
+
+    }, [position, aircraft])
 }
 
-export default function OverlayHUD(){
-    const {state} = useSpiccatoState(mainManager, [mainPaths.position, mainPaths.aircraft, mainPaths.gimbal]);
+export default function OverlayHUD() {
+    const { state } = useSpiccatoState(mainManager, [mainPaths.position, mainPaths.aircraft, mainPaths.gimbal]);
     const canvasRef = useRef(null);
 
     useScaleCanvas(canvasRef);
@@ -92,6 +93,9 @@ export default function OverlayHUD(){
     useUpdatePosition(canvasRef, state.position, state.aircraft, state.gimbal);
 
     return (
-        <canvas ref={canvasRef} className="fixed top-0 left-0 bg-transparent"></canvas>
+        <>
+            {state.gimbal.isLocked && <FaLock style={{color: "cyan"}} className="fixed bottom-2 w-screen text-center z-50"  />} 
+            <canvas ref={canvasRef} className="fixed top-0 left-0 bg-transparent"></canvas>
+        </>
     )
 }

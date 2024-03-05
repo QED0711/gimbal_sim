@@ -96,7 +96,8 @@ const methods = {
 
         const metadata = this.getters.getMetadata();
         await invoke("send_metadata_packet", { metadata })
-    }
+    },
+
 };
 
 export default methods;

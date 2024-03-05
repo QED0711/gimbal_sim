@@ -73,7 +73,7 @@ export default function MapContainer() {
                 navigationHelpButton: false, // Don't create a navigation help button widget
                 navigationInstructionsInitiallyVisible: false,
                 scene3DOnly: true, // Use a 3D only scene mode
-                creditContainer: undefined, // Specify an element to place the Cesium credit text
+                creditContainer: document.createElement("div"), // Specify an element to place the Cesium credit text
             });
 
             const imageryProvider = new Cesium.UrlTemplateImageryProvider({
@@ -149,7 +149,7 @@ export default function MapContainer() {
                 </button>
                 <em className="block text-left text-sm text-black">udp://{window._initConfig.stream_address}:{window._initConfig.stream_port}</em>
                 <em className="block text-left text-sm text-black">fps: {window._initConfig.fps}</em>
-                <hr/>
+                <hr />
                 <label className="block">
                     <input className="ml-2" type="checkbox" checked={state.includeHud} onChange={e => mainManager.setters.setIncludeHud(e.target.checked)} />
                     HUD Overlay
@@ -168,8 +168,9 @@ export default function MapContainer() {
                 </label>
                 <hr />
                 <button onClick={handleOpenRoutePlanner} className="px-2 mt-1 bg-gray-100 rounded-sm shadow-sm shadow-black cursor-pointer">
-                    <FaMapLocationDot size={"2rem"} className="inline-block cursor-pointer "/> Planner
+                    <FaMapLocationDot size={"2rem"} className="inline-block cursor-pointer " /> Planner
                 </button>
+
             </div>
 
         </>
