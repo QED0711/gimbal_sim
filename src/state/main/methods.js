@@ -42,23 +42,23 @@ const methods = {
     },
 
     updateCamera() {
-        if (!!this.state.map) {
-            const gimbal = this.state.gimbal;
-            const camera = this.state.map.camera;
+        if (!this.state.map) return;
 
-            const curFov = camera.frustum.fov;
-            const curFovy = camera.frustum.fovy;
+        const gimbal = this.state.gimbal;
+        const camera = this.state.map.camera;
 
-            let heading, pitch;
-            heading = Cesium.Math.toRadians(gimbal.heading);
-            pitch = Cesium.Math.toRadians(gimbal.pitch);
+        const curFov = camera.frustum.fov;
+        const curFovy = camera.frustum.fovy;
 
-            camera.lookAt(
-                this.state.entity.position.getValue(),
-                new Cesium.HeadingPitchRange(heading, pitch, gimbal.range)
-            );
-            camera.frustum.fov = Cesium.Math.toRadians(60) / gimbal.zoomAmount;
-        }
+        let heading, pitch, roll;
+        heading = Cesium.Math.toRadians(gimbal.heading);
+        pitch = Cesium.Math.toRadians(gimbal.pitch);
+
+        camera.lookAt(
+            this.state.entity.position.getValue(),
+            new Cesium.HeadingPitchRange(heading, pitch, gimbal.range)
+        );
+        camera.frustum.fov = Cesium.Math.toRadians(60) / gimbal.zoomAmount;
     },
 
     sendImage(imageQuality) {
@@ -95,8 +95,19 @@ const methods = {
         if (!this.state.map) return;
 
         const metadata = this.getters.getMetadata();
+        if(!metadata) return;
         await invoke("send_metadata_packet", { metadata })
     },
+
+    updateAtmosphereOcclusion() {
+        const entity = this.state.entity;
+        if(!entity) return;
+
+        const atmosphereLevel = this.state.atmosphere ?? 0.0;
+        entity.ellipsoid.material = atmosphereLevel === 1
+            ? Cesium.Color.WHITE.withAlpha(0.9999)
+            : Cesium.Color.WHITE.withAlpha(atmosphereLevel)
+    }
 
 };
 

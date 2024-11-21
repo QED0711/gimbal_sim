@@ -87,6 +87,7 @@ impl Default for MissionTemplate {
 pub struct Config {
     pub stream_address: String,
     pub stream_port: String, 
+    pub terrain_rendering_threshold: f32,
     pub fps: i32,
     pub hud_fps: i32,
     pub overlay_alpha: f32,
@@ -104,6 +105,7 @@ impl Default for Config {
         Config {
             stream_address: "127.0.0.1".to_string(),
             stream_port: "15000".to_string(),
+            terrain_rendering_threshold: 2.0,
             fps: 30,
             hud_fps: 5,
             overlay_alpha: 0.5,

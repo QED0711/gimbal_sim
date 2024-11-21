@@ -12,6 +12,9 @@ import mainManager, { mainPaths } from "../../state/main/mainManager";
 // ========================== ICONS ========================== 
 import { FaMapLocationDot } from "react-icons/fa6";
 
+// ========================== CONSTANTS ========================== 
+import {CONTROLLER_TYPE} from '../../utils/general'
+
 
 export default function MapContainer() {
     // STATE
@@ -20,7 +23,8 @@ export default function MapContainer() {
         mainPaths.isPaused,
         mainPaths.startPosition,
         mainPaths.entity,
-        mainPaths.includeHud
+        mainPaths.includeHud,
+        mainPaths.atmosphere
     ]);
     const [record, setRecord] = useState(false);
     const [imageQuality, setImageQuality] = useState(0.3);
@@ -42,6 +46,13 @@ export default function MapContainer() {
         webview.once('tauri://error', function (e) {
             console.log(e)
         })
+    }
+
+    // RENDERERS
+    const renderControllerOptions = (controllerTypes) => {
+        return Object.values(controllerTypes).map(ct => (
+            <option key={ct} value={ct}>{ct}</option>
+        ))
     }
 
     // EFFECTS
@@ -83,6 +94,8 @@ export default function MapContainer() {
 
             viewer.camera.frustum.fov = Cesium.Math.toRadians(60.0); // set the default fov
 
+            viewer.scene.globe.maximumScreenSpaceError = 1;
+
             mainManager.setters.setMap(viewer);
         }
         exec();
@@ -98,7 +111,7 @@ export default function MapContainer() {
                 }, false),
                 ellipsoid: {
                     radii: new Cesium.Cartesian3(10.0, 10.0, 10.0),
-                    material: Cesium.Color.RED.withAlpha(0.0),
+                    material: Cesium.Color.WHITE.withAlpha(0.0),
                 },
             });
             mainManager.setters.setEntity(aircraftEntity);
@@ -154,7 +167,7 @@ export default function MapContainer() {
                     <input className="ml-2" type="checkbox" checked={state.includeHud} onChange={e => mainManager.setters.setIncludeHud(e.target.checked)} />
                     HUD Overlay
                 </label>
-                <label>
+                <label className="block py-1 border-t border-gray-500">
                     Quality
                     <input
                         className="ml-1 mb-1 px-1 rounded-sm"
@@ -165,6 +178,25 @@ export default function MapContainer() {
                         value={imageQuality}
                         onChange={(e) => setImageQuality(parseFloat(e.target.value))}
                     />
+                </label>
+                <label className="block border-t border-gray-500">
+                    Atmosphere {(state.atmosphere * 100).toFixed(0)}%<br/>
+                    <input 
+                        type="range" 
+                        min="0" 
+                        max="1.0" 
+                        step="0.01" 
+                        value={state.atmosphere} 
+                        onChange={(e) => {
+                            mainManager.setters.setAtmosphere(Number(e.target.value))
+                            mainManager.methods.updateAtmosphereOcclusion()
+                        }} 
+                    />
+                </label>
+                <label className="block w-full border-t border-gray-500">
+                    <select onChange={e => mainManager.setters.setGamepadType(e.target.value)}>
+                        {renderControllerOptions(CONTROLLER_TYPE)}
+                    </select>
                 </label>
                 <hr />
                 <button onClick={handleOpenRoutePlanner} className="px-2 mt-1 bg-gray-100 rounded-sm shadow-sm shadow-black cursor-pointer">

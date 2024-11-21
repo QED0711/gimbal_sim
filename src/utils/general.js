@@ -1,3 +1,9 @@
+
+export const CONTROLLER_TYPE = {
+    CONTROLLER: "controller",
+    JOYSTICK: "joystick"
+}
+
 export const betweenRange = (n, min, max) => {
     if (n < min) return min;
     if (n > max) return max;
@@ -15,4 +21,5 @@ export const formatTime = (milliseconds) => {
 
     // Return formatted string with leading zeros
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secondsLeft.toString().padStart(2, '0')}`
+
 }
