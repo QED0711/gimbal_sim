@@ -31,10 +31,6 @@ export default function init() {
                     pitchAxes = gamepad.axes[5] * -1;
                     zoomAxes = gamepad.axes[2] * -1;
                     toggleLock = getMomentaryButton(gamepad, 15, "toggleLock");
-                    // toggleLock = (window.prevToggleLock !== undefined && window.prevToggleLock !== gamepad.buttons[15].value) 
-                    //     ? gamepad.buttons[15].value
-                    //     : 0
-                    // window.prevToggleLock = gamepad.buttons[15].value;
                     break;
                 case CONTROLLER_TYPE.JOYSTICK:
                     yawAxes = gamepad.axes[1];

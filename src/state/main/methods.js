@@ -23,7 +23,7 @@ const methods = {
         const earthRadius = Cesium.Ellipsoid.WGS84.maximumRadius;
         const deltaLatitude = Cesium.Math.toDegrees((horizontalDistance / earthRadius) * Math.cos(headingRadians));
         const deltaLongitude = Cesium.Math.toDegrees(
-            (horizontalDistance / (earthRadius * Math.cos(currentPosition.lat))) * Math.sin(headingRadians)
+            (horizontalDistance / (earthRadius * Math.cos(Cesium.Math.toRadians(currentPosition.lat)))) * Math.sin(headingRadians)
         );
 
         const lat = currentPosition.lat + deltaLatitude,
