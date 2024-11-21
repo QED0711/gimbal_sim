@@ -1,7 +1,12 @@
 
-export const CONTROLLER_TYPE = {
+export const GAMEPAD_TYPE = {
     CONTROLLER: "controller",
     JOYSTICK: "joystick"
+}
+
+export const CAMERA_TYPE = {
+    EO: "eo",
+    IR: "ir",
 }
 
 export const betweenRange = (n, min, max) => {

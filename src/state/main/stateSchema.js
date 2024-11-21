@@ -1,9 +1,13 @@
+import { CAMERA_TYPE, GAMEPAD_TYPE } from "../../utils/general";
+
 const initConfig = window._initConfig
 
 const stateSchema = {
 
     imageDimensions: { width: 1280, height: 720 },
     map: null,
+    imageryLayer: null,
+    cameraType: CAMERA_TYPE.EO,
     hud: null,
     includeHud: false,
     isPaused: false,
@@ -49,7 +53,7 @@ const stateSchema = {
         rate: initConfig.mission_templates?.[0]?.orbit?.rate * 1000 ?? 1000,
     },
 
-    gamepadType: "controller",
+    gamepadType: GAMEPAD_TYPE.CONTROLLER,
     gamepad: null,
 }
 

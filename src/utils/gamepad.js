@@ -1,6 +1,6 @@
 import "tauri-plugin-gamepad-api";
 import mainManager from "../state/main/mainManager";
-import { CONTROLLER_TYPE } from "./general";
+import { GAMEPAD_TYPE } from "./general";
 
 const getMomentaryButton = (gamepad, idx, name) => {
     const value = (window[name] !== undefined && window[name] !== gamepad.buttons[idx].value)
@@ -26,13 +26,13 @@ export default function init() {
 
             let yawAxes = 0, pitchAxes = 0, zoomAxes = 0, toggleLock = 0;
             switch (gamepadType) {
-                case CONTROLLER_TYPE.CONTROLLER:
+                case GAMEPAD_TYPE.CONTROLLER:
                     yawAxes = gamepad.axes[4];
                     pitchAxes = gamepad.axes[5] * -1;
                     zoomAxes = gamepad.axes[2] * -1;
                     toggleLock = getMomentaryButton(gamepad, 15, "toggleLock");
                     break;
-                case CONTROLLER_TYPE.JOYSTICK:
+                case GAMEPAD_TYPE.JOYSTICK:
                     yawAxes = gamepad.axes[1];
                     pitchAxes = gamepad.axes[2];
                     zoomAxes = gamepad.axes[3];

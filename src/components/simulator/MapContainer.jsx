@@ -13,7 +13,7 @@ import mainManager, { mainPaths } from "../../state/main/mainManager";
 import { FaMapLocationDot } from "react-icons/fa6";
 
 // ========================== CONSTANTS ========================== 
-import {CONTROLLER_TYPE} from '../../utils/general'
+import { CAMERA_TYPE, GAMEPAD_TYPE } from '../../utils/general'
 
 
 export default function MapContainer() {
@@ -24,7 +24,10 @@ export default function MapContainer() {
         mainPaths.startPosition,
         mainPaths.entity,
         mainPaths.includeHud,
-        mainPaths.atmosphere
+        mainPaths.atmosphere,
+        mainPaths.imageryLayer,
+        mainPaths.gamepadType,
+        mainPaths.cameraType
     ]);
     const [record, setRecord] = useState(false);
     const [imageQuality, setImageQuality] = useState(0.3);
@@ -49,9 +52,9 @@ export default function MapContainer() {
     }
 
     // RENDERERS
-    const renderControllerOptions = (controllerTypes) => {
-        return Object.values(controllerTypes).map(ct => (
-            <option key={ct} value={ct}>{ct}</option>
+    const renderOptions = (ops) => {
+        return Object.values(ops).map(op => (
+            <option key={op} value={op}>{op}</option>
         ))
     }
 
@@ -90,7 +93,8 @@ export default function MapContainer() {
             const imageryProvider = new Cesium.UrlTemplateImageryProvider({
                 url: window._initConfig.background_tile_url ?? "http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}",
             });
-            viewer.imageryLayers.addImageryProvider(imageryProvider);
+            const imageryLayer = viewer.imageryLayers.addImageryProvider(imageryProvider);
+            mainManager.setters.setImageryLayer(imageryLayer)
 
             viewer.camera.frustum.fov = Cesium.Math.toRadians(60.0); // set the default fov
 
@@ -152,6 +156,21 @@ export default function MapContainer() {
 
     }, [record, imageQuality]);
 
+    // EO/IR 
+    useEffect(() => {
+        if (state.imageryLayer) {
+            if (state.cameraType === CAMERA_TYPE.EO) {
+                state.imageryLayer.brightness = 1.0;
+                state.imageryLayer.contrast = 1.0;
+                state.imageryLayer.saturation = 1.0;
+            } else if (state.cameraType === CAMERA_TYPE.IR) {
+                state.imageryLayer.brightness = 0.8;
+                state.imageryLayer.contrast = 2.0;
+                state.imageryLayer.saturation = 0.0;
+            }
+        }
+    }, [state.cameraType, state.imageryLayer])
+
 
     return (
         <>
@@ -180,22 +199,27 @@ export default function MapContainer() {
                     />
                 </label>
                 <label className="block border-t border-gray-500">
-                    Atmosphere {(state.atmosphere * 100).toFixed(0)}%<br/>
-                    <input 
-                        type="range" 
-                        min="0" 
-                        max="1.0" 
-                        step="0.01" 
-                        value={state.atmosphere} 
+                    Atmosphere {(state.atmosphere * 100).toFixed(0)}%<br />
+                    <input
+                        type="range"
+                        min="0"
+                        max="1.0"
+                        step="0.01"
+                        value={state.atmosphere}
                         onChange={(e) => {
                             mainManager.setters.setAtmosphere(Number(e.target.value))
                             mainManager.methods.updateAtmosphereOcclusion()
-                        }} 
+                        }}
                     />
                 </label>
-                <label className="block w-full border-t border-gray-500">
-                    <select onChange={e => mainManager.setters.setGamepadType(e.target.value)}>
-                        {renderControllerOptions(CONTROLLER_TYPE)}
+                <label className="block w-full py-1 border-t border-gray-500">
+                    <select onChange={e => mainManager.setters.setGamepadType(e.target.value)} value={state.gamepadType}>
+                        {renderOptions(GAMEPAD_TYPE)}
+                    </select>
+                </label>
+                <label className="block w-full py-1 border-t border-gray-500">
+                    <select onChange={e => mainManager.setters.setCameraType(e.target.value)} value={state.cameraType}>
+                        {renderOptions(CAMERA_TYPE)}
                     </select>
                 </label>
                 <hr />
