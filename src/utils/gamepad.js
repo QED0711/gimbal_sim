@@ -2,13 +2,19 @@ import "tauri-plugin-gamepad-api";
 import mainManager from "../state/main/mainManager";
 import { GAMEPAD_TYPE } from "./general";
 
-const getMomentaryButton = (gamepad, idx, name) => {
-    const value = (window[name] !== undefined && window[name] !== gamepad.buttons[idx].value)
-        ? gamepad.buttons[idx].value
-        : 0
 
-        window[name] = gamepad.buttons[idx].value;
-        return value
+const buttonStates = {}
+const getMomentaryButton = (gamepad, idx, name) => {
+    if (!(name in buttonStates)) {
+        buttonStates[name] = 0;
+    }
+
+    const value = (buttonStates[name] !== gamepad.buttons[idx].value)
+        ? gamepad.buttons[idx].value
+        : 0;
+
+    buttonStates[name] = gamepad.buttons[idx].value;
+    return value;
 }
 
 export default function init() {
@@ -24,13 +30,18 @@ export default function init() {
             gamepad.buttons.forEach((button, i) => {if(button.value !== 0) console.log(`${gpIdx}: BUTTON ${i}:`, button.value)});
             gamepad.axes.forEach((axis, i) => {if(axis !== 0) console.log(`${gpIdx}: AXIS ${i}:`, axis)});
 
-            let yawAxes = 0, pitchAxes = 0, zoomAxes = 0, toggleLock = 0;
+            let yawAxes = 0,
+                pitchAxes = 0,
+                zoomAxes = 0,
+                toggleLock = 0,
+                toggleCameraType = 0;
             switch (gamepadType) {
                 case GAMEPAD_TYPE.CONTROLLER:
-                    yawAxes = gamepad.axes[4];
-                    pitchAxes = gamepad.axes[5] * -1;
-                    zoomAxes = gamepad.axes[2] * -1;
-                    toggleLock = getMomentaryButton(gamepad, 15, "toggleLock");
+                    yawAxes = gamepad.axes[window._initConfig?.gamepad_layout?.yaw_axis ?? -1];
+                    pitchAxes = gamepad.axes[window._initConfig?.gamepad_layout?.pitch_axis ?? -1] * -1;
+                    zoomAxes = gamepad.axes[window._initConfig?.gamepad_layout?.zoom_axis ?? -1] * -1;
+                    toggleLock = getMomentaryButton(gamepad, window._initConfig?.gamepad_layout?.lock_button ?? -1, "toggleLock");
+                    toggleCameraType = getMomentaryButton(gamepad, window._initConfig?.gamepad_layout?.camera_type_button ?? -1, "toggleCameraType")
                     break;
                 case GAMEPAD_TYPE.JOYSTICK:
                     yawAxes = gamepad.axes[1];
@@ -58,8 +69,12 @@ export default function init() {
                     : mainManager.setters.adjustGimbalZoom(zoomAxes * -1)
             }
 
-            if(toggleLock) {
+            if (toggleLock) {
                 mainManager.setters.toggleGimbalLock();
+            }
+
+            if (toggleCameraType) {
+                mainManager.setters.toggleCameraType();
             }
         }
     }, 25)

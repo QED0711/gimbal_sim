@@ -2,18 +2,18 @@ import { useEffect } from "react";
 import mainManager from "../state/main/mainManager";
 
 const tempRemoveGimbalLock = () => {
-    if(window._didRemoveLock) {
+    if (window._didRemoveLock) {
         mainManager.setters.setTargetToCenterScreen();
     }
     if (!window._didRemoveLock && mainManager.getters.getGimbal_isLocked()) {
         window._didRemoveLock = true;
         mainManager.setters.setGimbal_isLocked(false);
     }
-    
+
 };
 
 const restoreGimbalLock = () => {
-    if(window._didRemoveLock) {
+    if (window._didRemoveLock) {
         mainManager.setters.setGimbal_isLocked(true);
         delete window._didRemoveLock;
     }
@@ -74,6 +74,10 @@ export default function useKeyboardShortcuts() {
             "-": () => {
                 mainManager.setters.decreaseAircraftVelocity(1 / 2.237);
             },
+
+            c() {
+                mainManager.setters.toggleCameraType();
+            }
         };
 
         window.addEventListener("keydown", function (e) {
@@ -81,7 +85,7 @@ export default function useKeyboardShortcuts() {
         });
 
         window.addEventListener("keyup", function (e) {
-            if(["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.key)){
+            if (["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.key)) {
                 restoreGimbalLock();
             }
         });

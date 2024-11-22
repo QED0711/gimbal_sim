@@ -10,7 +10,7 @@ import { useSpiccatoState } from "spiccato-react";
 import mainManager, { mainPaths } from "../../state/main/mainManager";
 
 // ========================== ICONS ========================== 
-import { FaMapLocationDot } from "react-icons/fa6";
+import { FaMapLocationDot, FaMinimize, FaMinus, FaPlus } from "react-icons/fa6";
 
 // ========================== CONSTANTS ========================== 
 import { CAMERA_TYPE, GAMEPAD_TYPE } from '../../utils/general'
@@ -31,6 +31,7 @@ export default function MapContainer() {
     ]);
     const [record, setRecord] = useState(false);
     const [imageQuality, setImageQuality] = useState(0.3);
+    const [showSettingsPanel, setShowSettingsPanel] = useState(false);
 
     // EVENTS
     const handleOpenRoutePlanner = () => {
@@ -175,57 +176,70 @@ export default function MapContainer() {
     return (
         <>
             <div id="map" className="w-screen h-screen"></div>
-            <div className="fixed top-1 right-1 bg-gray-300 z-50 p-1 rounded-md cursor-pointer">
-                <button className="bg-gray-100 px-1 rounded-sm shadow-sm shadow-black" onClick={() => setRecord(r => !r)}>
-                    {record ? "STOP" : "START"} RECORDING
+            <div className="fixed top-1 right-1 w-[15vw] bg-gray-300 z-50 p-1 rounded-md cursor-pointer shadow-md shadow-gray-500 backdrop-blur-md bg-opacity-50">
+                <button className="block w-full text-xl cursor-pointer" onClick={() => { setShowSettingsPanel(b => !b) }}>
+                    {
+                        showSettingsPanel
+                            ? <FaMinus className="float-right" />
+                            : <FaPlus className="float-right" />
+                    }
                 </button>
-                <em className="block text-left text-sm text-black">udp://{window._initConfig.stream_address}:{window._initConfig.stream_port}</em>
-                <em className="block text-left text-sm text-black">fps: {window._initConfig.fps}</em>
-                <hr />
-                <label className="block">
-                    <input className="ml-2" type="checkbox" checked={state.includeHud} onChange={e => mainManager.setters.setIncludeHud(e.target.checked)} />
-                    HUD Overlay
-                </label>
-                <label className="block py-1 border-t border-gray-500">
-                    Quality
-                    <input
-                        className="ml-1 mb-1 px-1 rounded-sm"
-                        type="number"
-                        min="0.1"
-                        max="1.0"
-                        step="0.1"
-                        value={imageQuality}
-                        onChange={(e) => setImageQuality(parseFloat(e.target.value))}
-                    />
-                </label>
-                <label className="block border-t border-gray-500">
-                    Atmosphere {(state.atmosphere * 100).toFixed(0)}%<br />
-                    <input
-                        type="range"
-                        min="0"
-                        max="1.0"
-                        step="0.01"
-                        value={state.atmosphere}
-                        onChange={(e) => {
-                            mainManager.setters.setAtmosphere(Number(e.target.value))
-                            mainManager.methods.updateAtmosphereOcclusion()
-                        }}
-                    />
-                </label>
-                <label className="block w-full py-1 border-t border-gray-500">
-                    <select onChange={e => mainManager.setters.setGamepadType(e.target.value)} value={state.gamepadType}>
-                        {renderOptions(GAMEPAD_TYPE)}
-                    </select>
-                </label>
-                <label className="block w-full py-1 border-t border-gray-500">
-                    <select onChange={e => mainManager.setters.setCameraType(e.target.value)} value={state.cameraType}>
-                        {renderOptions(CAMERA_TYPE)}
-                    </select>
-                </label>
-                <hr />
-                <button onClick={handleOpenRoutePlanner} className="px-2 mt-1 bg-gray-100 rounded-sm shadow-sm shadow-black cursor-pointer">
-                    <FaMapLocationDot size={"2rem"} className="inline-block cursor-pointer " /> Planner
-                </button>
+                {
+                    showSettingsPanel
+                    &&
+                    <>
+                        <button className="bg-gray-100 px-1 rounded-sm shadow-sm shadow-black" onClick={() => setRecord(r => !r)}>
+                            {record ? "STOP" : "START"} RECORDING
+                        </button>
+                        <em className="block text-left text-sm text-black">udp://{window._initConfig.stream_address}:{window._initConfig.stream_port}</em>
+                        <em className="block text-left text-sm text-black">fps: {window._initConfig.fps}</em>
+                        <hr />
+                        <label className="block">
+                            <input className="ml-2" type="checkbox" checked={state.includeHud} onChange={e => mainManager.setters.setIncludeHud(e.target.checked)} />
+                            HUD Overlay
+                        </label>
+                        <label className="block py-1 border-t border-gray-500">
+                            Quality
+                            <input
+                                className="ml-1 mb-1 px-1 rounded-sm"
+                                type="number"
+                                min="0.1"
+                                max="1.0"
+                                step="0.1"
+                                value={imageQuality}
+                                onChange={(e) => setImageQuality(parseFloat(e.target.value))}
+                            />
+                        </label>
+                        <label className="block border-t border-gray-500">
+                            Atmosphere {(state.atmosphere * 100).toFixed(0)}%<br />
+                            <input
+                                type="range"
+                                min="0"
+                                max="1.0"
+                                step="0.01"
+                                value={state.atmosphere}
+                                onChange={(e) => {
+                                    mainManager.setters.setAtmosphere(Number(e.target.value))
+                                    mainManager.methods.updateAtmosphereOcclusion()
+                                }}
+                            />
+                        </label>
+                        <label className="block w-full py-1 border-t border-gray-500">
+                            <select onChange={e => mainManager.setters.setGamepadType(e.target.value)} value={state.gamepadType}>
+                                {renderOptions(GAMEPAD_TYPE)}
+                            </select>
+                        </label>
+                        <label className="block w-full py-1 border-t border-gray-500">
+                            <select onChange={e => mainManager.setters.setCameraType(e.target.value)} value={state.cameraType}>
+                                {renderOptions(CAMERA_TYPE)}
+                            </select>
+                        </label>
+                        <hr />
+                        <button onClick={handleOpenRoutePlanner} className="px-2 mt-1 bg-gray-100 rounded-sm shadow-sm shadow-black cursor-pointer">
+                            <FaMapLocationDot size={"2rem"} className="inline-block cursor-pointer " /> Planner
+                        </button>
+                    </>
+                }
 
             </div>
 

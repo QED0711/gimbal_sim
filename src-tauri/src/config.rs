@@ -84,11 +84,34 @@ impl Default for MissionTemplate {
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(default)]
+pub struct GamepadLayout {
+    yaw_axis: i8,
+    pitch_axis: i8,
+    zoom_axis: i8,
+    lock_button: i8,
+    camera_type_button: i8,
+}
+
+impl Default for GamepadLayout {
+    fn default() -> Self {
+        GamepadLayout{
+            yaw_axis: -1,
+            pitch_axis: -1, 
+            zoom_axis: -1,
+            lock_button: -1,
+            camera_type_button: -1
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(default)]
 pub struct Config {
     pub stream_address: String,
     pub stream_port: String, 
     pub terrain_rendering_threshold: f32,
     pub fps: i32,
+    pub gamepad_layout: GamepadLayout,
     pub hud_fps: i32,
     pub overlay_alpha: f32,
     pub ion_access_token: Option<String>, 
@@ -112,6 +135,7 @@ impl Default for Config {
             ion_access_token: None,
             background_tile_url: None, 
             vector_tile_url: None, 
+            gamepad_layout: GamepadLayout::default(),
 
             mission_templates: vec![
                 MissionTemplate::default()

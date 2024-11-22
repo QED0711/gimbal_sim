@@ -1,6 +1,7 @@
 import * as Cesium from 'cesium'
 import { mainPaths } from "./mainManager";
 import {emit} from '@tauri-apps/api/event'
+import { CAMERA_TYPE } from '../../utils/general';
 
 const setters = {
     togglePause() {
@@ -205,6 +206,18 @@ const setters = {
             ]
         })
     },
+
+    toggleCameraType() {
+        this.setState(prevState => {
+            const cameraType = prevState.cameraType === CAMERA_TYPE.EO
+                ? CAMERA_TYPE.IR
+                : CAMERA_TYPE.EO
+            return [
+                {cameraType},
+                [this.paths.cameraType]
+            ]
+        })
+    }
 
 };
 
