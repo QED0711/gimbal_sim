@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import * as Cesium from "cesium";
 
+
 // ========================== TAURI ========================== 
 import { invoke } from "@tauri-apps/api";
 import { WebviewWindow } from '@tauri-apps/api/window';
@@ -14,6 +15,8 @@ import { FaMapLocationDot, FaMinimize, FaMinus, FaPlus } from "react-icons/fa6";
 
 // ========================== CONSTANTS ========================== 
 import { CAMERA_TYPE, GAMEPAD_TYPE } from '../../utils/general'
+
+import CloudImage from '../../assets/generated_clouds.png'
 
 
 export default function MapContainer() {
@@ -122,6 +125,22 @@ export default function MapContainer() {
             mainManager.setters.setEntity(aircraftEntity);
             state.map.trackedEntity = aircraftEntity;
             setTimeout(mainManager.methods.updateCamera, 500);
+
+            const position = mainManager.getters.getPosition();
+
+            const clouds = state.map.entities.add({
+                rectangle: {
+                    coordinates: Cesium.Rectangle.fromDegrees(position.lng - 1, position.lat - 1, position.lng + 1, position.lat + 1),
+                    // material: Cesium.Color.GRAY.withAlpha(0.7),
+                    material: new Cesium.ImageMaterialProperty({
+                        image: CloudImage, 
+                        transparent: true,
+                        color: Cesium.Color.WHITE.withAlpha(0.5)
+                    }),
+                    height: 2000,
+                }
+            })
+            mainManager.setters.setCloudLayer(clouds)
         }
     }, [state.map]);
 
@@ -220,7 +239,16 @@ export default function MapContainer() {
                                 value={state.atmosphere}
                                 onChange={(e) => {
                                     mainManager.setters.setAtmosphere(Number(e.target.value))
-                                    mainManager.methods.updateAtmosphereOcclusion()
+                                    // mainManager.methods.updateAtmosphereOcclusion()
+                                    const clouds = mainManager.getters.getCloudLayer();
+                                    // clouds.rectangle.material = Cesium.Color.GRAY.withAlpha(Number(e.target.value))
+                                    clouds.rectangle.material = new Cesium.ImageMaterialProperty({
+                                        image: CloudImage,
+                                        transparent: true,
+                                        color: Cesium.Color.WHITE.withAlpha(Number(e.target.value))
+                                    })
+
+                                
                                 }}
                             />
                         </label>

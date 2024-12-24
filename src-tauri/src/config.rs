@@ -9,7 +9,7 @@ use crate::utils::AppSharedState;
 #[command(author, version, about, long_about = None)]
 pub struct Args {
     /// absolute path to config file
-    #[arg(short, long, default_value = "./gimbal.conf")]
+    #[arg(short, long, default_value = "/opt/gimbal.conf")]
     pub file_path: String,
     
     #[arg(short, long, default_value="true")]

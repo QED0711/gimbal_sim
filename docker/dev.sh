@@ -26,7 +26,7 @@ docker run --rm -ti --network host \
     -e DISPLAY=$DISPLAY \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
     -e USERNAME=$(whoami) \
-    --device /dev/input/js0:/dev/input/js0 \
-    --device /dev/input/event28:/dev/input/event28 \
     gimbal_simulator:dev \
     $COMMAND
+    # --device /dev/input/js0:/dev/input/js0 \
+    # --device /dev/input/event28:/dev/input/event28 \

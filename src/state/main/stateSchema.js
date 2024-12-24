@@ -12,13 +12,14 @@ const stateSchema = {
     includeHud: false,
     isPaused: false,
     atmosphere: 0.0,
+    cloudLayer: null,
 
     missions: initConfig.mission_templates ?? [],
     selectedMissionIndex: 0,
 
     position: {
-        lng: initConfig.mission_templates?.[0]?.aircraft_location?.lng ?? 0.0, 
-        lat: initConfig.mission_templates?.[0]?.aircraft_location?.lat ?? 0.0, 
+        lng: initConfig.mission_templates?.[0]?.aircraft_location?.lng ?? -77.021561, 
+        lat: initConfig.mission_templates?.[0]?.aircraft_location?.lat ?? 38.897155, 
         alt: initConfig.mission_templates?.[0]?.aircraft_location?.alt ?? 10000, 
         // lat: initConfig.start_lat ?? 0.0, 
         // alt: initConfig.start_alt ?? 10000
