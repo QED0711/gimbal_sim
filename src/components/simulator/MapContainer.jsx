@@ -16,8 +16,6 @@ import { FaMapLocationDot, FaMinimize, FaMinus, FaPlus } from "react-icons/fa6";
 // ========================== CONSTANTS ========================== 
 import { CAMERA_TYPE, GAMEPAD_TYPE } from '../../utils/general'
 
-import CloudImage from '../../assets/generated_clouds.png'
-
 
 export default function MapContainer() {
     // STATE
@@ -30,7 +28,8 @@ export default function MapContainer() {
         mainPaths.atmosphere,
         mainPaths.imageryLayer,
         mainPaths.gamepadType,
-        mainPaths.cameraType
+        mainPaths.cameraType,
+        mainPaths.clouds
     ]);
     const [record, setRecord] = useState(false);
     const [imageQuality, setImageQuality] = useState(0.3);
@@ -126,21 +125,22 @@ export default function MapContainer() {
             state.map.trackedEntity = aircraftEntity;
             setTimeout(mainManager.methods.updateCamera, 500);
 
-            const position = mainManager.getters.getPosition();
+            mainManager.methods.updateCloudLayers();
+            // const position = mainManager.getters.getPosition();
 
-            const clouds = state.map.entities.add({
-                rectangle: {
-                    coordinates: Cesium.Rectangle.fromDegrees(position.lng - 1, position.lat - 1, position.lng + 1, position.lat + 1),
-                    // material: Cesium.Color.GRAY.withAlpha(0.7),
-                    material: new Cesium.ImageMaterialProperty({
-                        image: CloudImage, 
-                        transparent: true,
-                        color: Cesium.Color.WHITE.withAlpha(0.5)
-                    }),
-                    height: 2000,
-                }
-            })
-            mainManager.setters.setCloudLayer(clouds)
+            // const clouds = state.map.entities.add({
+            //     rectangle: {
+            //         coordinates: Cesium.Rectangle.fromDegrees(position.lng - 1, position.lat - 1, position.lng + 1, position.lat + 1),
+            //         // material: Cesium.Color.GRAY.withAlpha(0.7),
+            //         material: new Cesium.ImageMaterialProperty({
+            //             image: Cloud1, 
+            //             transparent: true,
+            //             color: Cesium.Color.WHITE.withAlpha(0.5)
+            //         }),
+            //         height: 2000,
+            //     }
+            // })
+            // mainManager.setters.setCloudLayer(clouds)
         }
     }, [state.map]);
 
@@ -229,29 +229,45 @@ export default function MapContainer() {
                                 onChange={(e) => setImageQuality(parseFloat(e.target.value))}
                             />
                         </label>
-                        <label className="block border-t border-gray-500">
-                            Atmosphere {(state.atmosphere * 100).toFixed(0)}%<br />
-                            <input
-                                type="range"
-                                min="0"
-                                max="1.0"
-                                step="0.01"
-                                value={state.atmosphere}
-                                onChange={(e) => {
-                                    mainManager.setters.setAtmosphere(Number(e.target.value))
-                                    // mainManager.methods.updateAtmosphereOcclusion()
-                                    const clouds = mainManager.getters.getCloudLayer();
-                                    // clouds.rectangle.material = Cesium.Color.GRAY.withAlpha(Number(e.target.value))
-                                    clouds.rectangle.material = new Cesium.ImageMaterialProperty({
-                                        image: CloudImage,
-                                        transparent: true,
-                                        color: Cesium.Color.WHITE.withAlpha(Number(e.target.value))
-                                    })
-
-                                
-                                }}
-                            />
-                        </label>
+                        <div className="block border-t border-gray-500">
+                            Clouds
+                            <label className="block">
+                                lw:
+                                <input
+                                    className="relative top-1 left-2"
+                                    type="range"
+                                    min="0"
+                                    max="1.0"
+                                    step="0.01"
+                                    value={state.clouds.low.alpha}
+                                    onChange={(e) => { mainManager.setters.changeCloudLevelOpacity("low", Number(e.target.value)) }}
+                                />
+                            </label>
+                            <label className="block">
+                                md:
+                                <input
+                                    className="relative top-1 left-2"
+                                    type="range"
+                                    min="0"
+                                    max="1.0"
+                                    step="0.01"
+                                    value={state.clouds.medium.alpha}
+                                    onChange={(e) => { mainManager.setters.changeCloudLevelOpacity("medium", Number(e.target.value)) }}
+                                />
+                            </label>
+                            <label className="block">
+                                hi:
+                                <input
+                                    className="relative top-1 left-2"
+                                    type="range"
+                                    min="0"
+                                    max="1.0"
+                                    step="0.01"
+                                    value={state.clouds.high.alpha}
+                                    onChange={(e) => { mainManager.setters.changeCloudLevelOpacity("high", Number(e.target.value)) }}
+                                />
+                            </label>
+                        </div>
                         <label className="block w-full py-1 border-t border-gray-500">
                             <select onChange={e => mainManager.setters.setGamepadType(e.target.value)} value={state.gamepadType}>
                                 {renderOptions(GAMEPAD_TYPE)}

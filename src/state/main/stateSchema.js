@@ -12,7 +12,11 @@ const stateSchema = {
     includeHud: false,
     isPaused: false,
     atmosphere: 0.0,
-    cloudLayer: null,
+    clouds: {
+        low: {cloud: null, alpha: 0.0, height: 304.8},
+        medium: {cloud: null, alpha: 0.0, height: 1524},
+        high: {cloud: null, alpha: 0.0, height: 6096},
+    },
 
     missions: initConfig.mission_templates ?? [],
     selectedMissionIndex: 0,

@@ -217,6 +217,22 @@ const setters = {
                 [this.paths.cameraType]
             ]
         })
+    },
+
+    changeCloudLevelOpacity(level, alpha){
+        this.setState(prevState => {
+            const cloudLevel = prevState.clouds[level];
+            cloudLevel.alpha = alpha;
+            if(cloudLevel.cloud) {
+                cloudLevel.cloud.rectangle.material.color = Cesium.Color.WHITE.withAlpha(alpha);
+            }
+            return [
+                {
+                    clouds: {...prevState.clouds, [level]: cloudLevel}
+                }, 
+                [this.paths.clouds]
+            ]
+        })
     }
 
 };

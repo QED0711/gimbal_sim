@@ -2,6 +2,10 @@ import { invoke } from "@tauri-apps/api";
 import * as Cesium from "cesium";
 import { calcHeading, calcPitch } from "../../utils/map";
 
+import Cloud1 from '../../assets/clouds_1.png'
+import Cloud2 from '../../assets/clouds_2.png'
+import Cloud3 from '../../assets/clouds_3.png'
+
 let callCount = 0;
 let lastLogTime = Date.now();
 
@@ -95,18 +99,53 @@ const methods = {
         if (!this.state.map) return;
 
         const metadata = this.getters.getMetadata();
-        if(!metadata) return;
+        if (!metadata) return;
         await invoke("send_metadata_packet", { metadata })
     },
 
     updateAtmosphereOcclusion() {
         const entity = this.state.entity;
-        if(!entity) return;
+        if (!entity) return;
 
         const atmosphereLevel = this.state.atmosphere ?? 0.0;
         entity.ellipsoid.material = atmosphereLevel === 1
             ? Cesium.Color.WHITE.withAlpha(0.9999)
             : Cesium.Color.WHITE.withAlpha(atmosphereLevel)
+    },
+
+    addCloudRect(cloudImg, alpha, height, map, position){
+        return map.entities.add({
+            rectangle: {
+                coordinates: Cesium.Rectangle.fromDegrees(position.lng - 1, position.lat - 1, position.lng + 1, position.lat + 1),
+                material: new Cesium.ImageMaterialProperty({
+                    image: cloudImg,
+                    transparent: true,
+                    color: Cesium.Color.WHITE.withAlpha(alpha ?? 0.0)
+                }),
+                height,
+            }
+        })
+
+    }, 
+
+    updateCloudLayers() {
+        const map = this.state.map;
+        const position = this.state.position;
+        if (!map || !position) return;
+
+        const clouds = this.state.clouds
+
+        for (let cloud of Object.values(this.state.clouds)) {
+            if (!cloud?.cloud) continue;
+            map.entities.remove(cloud.cloud)
+        }
+
+        clouds.low.cloud = this.methods.addCloudRect(Cloud1, clouds.low.alpha, clouds.low.height, map, position) // 1000ft
+        clouds.medium.cloud = this.methods.addCloudRect(Cloud2, clouds.medium.alpha, clouds.medium.height, map, position) // 1000ft
+        clouds.high.cloud = this.methods.addCloudRect(Cloud3, clouds.high.alpha, clouds.high.height, map, position) // 1000ft
+
+        this.setters.setClouds(clouds)
+
     }
 
 };
