@@ -231,10 +231,10 @@ export default function MapContainer() {
                         </label>
                         <div className="block border-t border-gray-500">
                             Clouds
-                            <label className="block">
-                                lw:
+                            <label className="grid grid-cols-12">
+                                <h3 className="col-span-2">lw:</h3>
                                 <input
-                                    className="relative top-1 left-2"
+                                    className="relative top-1 left-2 col-span-6"
                                     type="range"
                                     min="0"
                                     max="1.0"
@@ -243,10 +243,10 @@ export default function MapContainer() {
                                     onChange={(e) => { mainManager.setters.changeCloudLevelOpacity("low", Number(e.target.value)) }}
                                 />
                             </label>
-                            <label className="block">
-                                md:
+                            <label className="grid grid-cols-12">
+                                <h3 className="col-span-2">md:</h3>
                                 <input
-                                    className="relative top-1 left-2"
+                                    className="relative top-1 left-2 col-span-6"
                                     type="range"
                                     min="0"
                                     max="1.0"
@@ -255,10 +255,10 @@ export default function MapContainer() {
                                     onChange={(e) => { mainManager.setters.changeCloudLevelOpacity("medium", Number(e.target.value)) }}
                                 />
                             </label>
-                            <label className="block">
-                                hi:
+                            <label className="grid grid-cols-12">
+                                <h3 className="col-span-2">hi:</h3>
                                 <input
-                                    className="relative top-1 left-2"
+                                    className="relative top-1 left-2 col-span-6"
                                     type="range"
                                     min="0"
                                     max="1.0"

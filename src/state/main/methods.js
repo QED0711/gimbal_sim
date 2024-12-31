@@ -116,7 +116,7 @@ const methods = {
     addCloudRect(cloudImg, alpha, height, map, position){
         return map.entities.add({
             rectangle: {
-                coordinates: Cesium.Rectangle.fromDegrees(position.lng - 1, position.lat - 1, position.lng + 1, position.lat + 1),
+                coordinates: Cesium.Rectangle.fromDegrees(position.lng - 2, position.lat - 2, position.lng + 2, position.lat + 2),
                 material: new Cesium.ImageMaterialProperty({
                     image: cloudImg,
                     transparent: true,
