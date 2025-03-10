@@ -27,7 +27,6 @@ fn main() {
     // env::set_var("GST_DEBUG", "nv*:6");
     env::set_var("GST_DEBUG_DUMP_DOT_DIR", format!("/home/{username}/app"));
 
-    
     let config = parse_config();
 
     // GStreamer Setup

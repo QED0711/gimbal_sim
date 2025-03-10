@@ -5,6 +5,7 @@ import stateSchema from './stateSchema'
 import getters from './getters'
 import setters from './setters'
 import methods from './methods'
+import vehicles from './vehicles';
 
 
 const mainManager = new Spiccato(stateSchema, {id: "main", enableWriteProtection: false})
@@ -27,6 +28,7 @@ mainManager.init(); // IMPORTANT: This must be called prior to addCustomGetters 
 mainManager.addCustomGetters(getters)
 mainManager.addCustomSetters(setters)
 mainManager.addCustomMethods(methods)
+mainManager.addNamespacedMethods({vehicles})
 
 window._mainManager = mainManager
 

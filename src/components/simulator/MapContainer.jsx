@@ -15,6 +15,7 @@ import { FaMapLocationDot, FaMinimize, FaMinus, FaPlus } from "react-icons/fa6";
 
 // ========================== CONSTANTS ========================== 
 import { CAMERA_TYPE, GAMEPAD_TYPE } from '../../utils/general'
+import models from "../../utils/models";
 
 
 export default function MapContainer() {
@@ -29,7 +30,8 @@ export default function MapContainer() {
         mainPaths.imageryLayer,
         mainPaths.gamepadType,
         mainPaths.cameraType,
-        mainPaths.clouds
+        mainPaths.clouds,
+        mainPaths.selectedMissionIndex
     ]);
     const [record, setRecord] = useState(false);
     const [imageQuality, setImageQuality] = useState(0.3);
@@ -104,6 +106,31 @@ export default function MapContainer() {
             viewer.scene.globe.maximumScreenSpaceError = 1;
 
             mainManager.setters.setMap(viewer);
+
+            // TEST CODE FOR ADDING 3d Models
+            // lat: 16.208911, lng: 52.196415
+            // let pxSize = 50
+
+            // const model = models.m1a1
+            // const modelEntity = viewer.entities.add({
+            //     position: Cesium.Cartesian3.fromDegrees(52.196415, 16.208911),
+            //     model: {
+            //         uri: model.path,
+            //         scale: model.scale,
+            //         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
+            //     },
+            // })
+            // setInterval(() => {
+            //     model.model.minimumPixelSize += 10 
+            //     console.log("PX SIZE: ", model.model.minimumPixelSize)
+            // }, 2000)
+            // let currentLat = 16.208911
+            // setInterval(() => {
+            //     currentLat += 0.0001
+            //     model.position = Cesium.Cartesian3.fromDegrees(52.196415, currentLat, 1000)
+            // }, 100)
+
+
         }
         exec();
     }, []);
@@ -126,24 +153,10 @@ export default function MapContainer() {
             setTimeout(mainManager.methods.updateCamera, 500);
 
             mainManager.methods.updateCloudLayers();
-            // const position = mainManager.getters.getPosition();
-
-            // const clouds = state.map.entities.add({
-            //     rectangle: {
-            //         coordinates: Cesium.Rectangle.fromDegrees(position.lng - 1, position.lat - 1, position.lng + 1, position.lat + 1),
-            //         // material: Cesium.Color.GRAY.withAlpha(0.7),
-            //         material: new Cesium.ImageMaterialProperty({
-            //             image: Cloud1, 
-            //             transparent: true,
-            //             color: Cesium.Color.WHITE.withAlpha(0.5)
-            //         }),
-            //         height: 2000,
-            //     }
-            // })
-            // mainManager.setters.setCloudLayer(clouds)
         }
     }, [state.map]);
 
+    // update aircraft position
     useEffect(() => {
         if (!!state.map) {
             if (!state.isPaused && !window._updateInterval) {
@@ -157,6 +170,7 @@ export default function MapContainer() {
         }
     }, [state.isPaused, state.map]);
 
+    // turn on/off recording
     useEffect(() => {
         const exec = async () => {
             clearInterval(window._recordingInterval);
@@ -176,6 +190,17 @@ export default function MapContainer() {
 
     }, [record, imageQuality]);
 
+    // render vehicles
+    useEffect(() => {
+        const mission = mainManager.getters.getSelectedMission();
+        if(state.map && mission) {
+            for (let i = 0; i < mission.vehicles.length; i++) {
+                const vehicle = mission.vehicles[i];
+                mainManager.vehicles.registerVehicleModel(vehicle, i);
+            }
+        }
+    }, [state.selectedMissionIndex, state.map])
+
     // EO/IR 
     useEffect(() => {
         if (state.imageryLayer) {
@@ -190,6 +215,7 @@ export default function MapContainer() {
             }
         }
     }, [state.cameraType, state.imageryLayer])
+
 
 
     return (

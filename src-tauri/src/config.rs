@@ -57,6 +57,26 @@ impl Default for Orbit {
     }
 }
 
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(default)]
+pub struct Vehicle {
+    model: String,
+    route: Vec<Location>,
+    speed: i32,
+    broadcast_cot: bool
+}
+
+impl Default for Vehicle {
+    fn default() -> Self {
+        Vehicle {
+            model: "whiteCar".to_string(), 
+            route: vec![], 
+            speed: 0, 
+            broadcast_cot: false
+        }
+    }
+}
+
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(default)]
@@ -67,6 +87,7 @@ pub struct MissionTemplate {
     target_location: Option<Location>,
     target_lock: bool,
     orbit: Orbit, 
+    vehicles: Vec<Vehicle>,
 }
 
 impl Default for MissionTemplate {
@@ -78,6 +99,7 @@ impl Default for MissionTemplate {
             target_location: None,
             target_lock: false,
             orbit: Orbit::default(),
+            vehicles: vec![],
         }
     }
 }
