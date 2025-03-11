@@ -16,6 +16,7 @@ import { FaMapLocationDot, FaMinimize, FaMinus, FaPlus } from "react-icons/fa6";
 // ========================== CONSTANTS ========================== 
 import { CAMERA_TYPE, GAMEPAD_TYPE } from '../../utils/general'
 import models from "../../utils/models";
+import { setSunlitTime } from "../../utils/map";
 
 
 export default function MapContainer() {
@@ -95,6 +96,9 @@ export default function MapContainer() {
                 creditContainer: document.createElement("div"), // Specify an element to place the Cesium credit text
             });
 
+            viewer.scene.globe.enableLighting = true;
+
+
             const imageryProvider = new Cesium.UrlTemplateImageryProvider({
                 url: window._initConfig.background_tile_url ?? "http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}",
             });
@@ -106,31 +110,6 @@ export default function MapContainer() {
             viewer.scene.globe.maximumScreenSpaceError = 1;
 
             mainManager.setters.setMap(viewer);
-
-            // TEST CODE FOR ADDING 3d Models
-            // lat: 16.208911, lng: 52.196415
-            // let pxSize = 50
-
-            // const model = models.m1a1
-            // const modelEntity = viewer.entities.add({
-            //     position: Cesium.Cartesian3.fromDegrees(52.196415, 16.208911),
-            //     model: {
-            //         uri: model.path,
-            //         scale: model.scale,
-            //         heightReference: Cesium.HeightReference.CLAMP_TO_GROUND,
-            //     },
-            // })
-            // setInterval(() => {
-            //     model.model.minimumPixelSize += 10 
-            //     console.log("PX SIZE: ", model.model.minimumPixelSize)
-            // }, 2000)
-            // let currentLat = 16.208911
-            // setInterval(() => {
-            //     currentLat += 0.0001
-            //     model.position = Cesium.Cartesian3.fromDegrees(52.196415, currentLat, 1000)
-            // }, 100)
-
-
         }
         exec();
     }, []);
@@ -194,8 +173,11 @@ export default function MapContainer() {
     useEffect(() => {
         const mission = mainManager.getters.getSelectedMission();
         if(state.map && mission) {
+            const position = mainManager.getters.getPosition()
+            setSunlitTime(position.lat, position.lng)
             for (let i = 0; i < mission.vehicles.length; i++) {
                 const vehicle = mission.vehicles[i];
+                console.log({vehicle})
                 mainManager.vehicles.registerVehicleModel(vehicle, i);
             }
         }

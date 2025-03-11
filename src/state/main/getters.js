@@ -95,8 +95,17 @@ const getters = {
         if(gamepads && gamepads.length !== this.state.gamepads.length) {
             this.setters.setGamepads(gamepads) 
         }
-    }
+    },
 
+    getVehicles() {
+        const entities = this.state.map?.entities?._entities?._array
+        if(!entities) return [];
+        return entities.filter(e => Boolean(e.id.match(/^VEHICLE-/i)))
+    },
+
+    getVehiclePosition(idx) {
+        return this.state.vehiclePositions[idx] ?? null
+    },
 }
 
 export default getters;

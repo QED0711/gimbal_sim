@@ -2,6 +2,7 @@ import * as Cesium from 'cesium'
 import mainManager, { mainPaths } from "./mainManager";
 import {emit} from '@tauri-apps/api/event'
 import { CAMERA_TYPE } from '../../utils/general';
+import { setSunlitTime } from '../../utils/map';
 
 const setters = {
     togglePause() {
@@ -188,6 +189,9 @@ const setters = {
                 isLocked: !!mission.target_lock
             }
             const orbit = mission.orbit;
+            console.log("FIRED")
+            setSunlitTime(position.lat, position.lng);
+
             return [
                 {
                     selectedMissionIndex: missionIdx,
@@ -234,6 +238,14 @@ const setters = {
                 }, 
                 [this.paths.clouds]
             ]
+        })
+    },
+
+    updateVehiclePosition(idx, position) {
+        this.setState(prevState => {
+            const vehiclePositions = prevState.vehiclePositions;
+            vehiclePositions[idx] = position
+            return [{vehiclePositions}, []] // this intentionally doesn't say anything was changed to avoid a state that might trigger re-renders 
         })
     }
 

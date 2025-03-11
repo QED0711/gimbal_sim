@@ -60,6 +60,8 @@ const stateSchema = {
 
     gamepadType: GAMEPAD_TYPE.CONTROLLER,
     gamepad: null,
+
+    vehiclePositions: {},
 }
 
 export default stateSchema;
