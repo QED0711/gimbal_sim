@@ -61,6 +61,7 @@ impl Default for Orbit {
 #[serde(default)]
 pub struct Vehicle {
     model: String,
+    name: String,
     route: Vec<Location>,
     speed: i32,
     broadcast_cot: bool
@@ -70,6 +71,7 @@ impl Default for Vehicle {
     fn default() -> Self {
         Vehicle {
             model: "whiteCar".to_string(), 
+            name: "".to_string(),
             route: vec![], 
             speed: 0, 
             broadcast_cot: false

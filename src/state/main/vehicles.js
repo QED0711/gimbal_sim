@@ -1,6 +1,8 @@
 import * as Cesium from 'cesium';
 import models from '../../utils/models';
 import { extrapolateRoute } from '../../utils/route';
+import { invoke } from '@tauri-apps/api';
+import mainManager from './mainManager';
 
 export default {
     registerVehicleModel(vehicle, idx) {
@@ -15,6 +17,7 @@ export default {
 
         const vehicleEntity = map.entities.add({
             id: `VEHICLE-${idx}`,
+            name: vehicle.name,
             position: new Cesium.CallbackProperty(() => {
                 const position = this.getters.getVehiclePosition(idx)
                 return Boolean(position)
@@ -56,6 +59,7 @@ export default {
         vehicleEntity.routeIdx = 0;
 
         vehicleEntity.movementInterval = setInterval(() => {
+
             vehicleEntity.routeIdx += 1
             let nextPoint = interpolation[vehicleEntity.routeIdx]
             if(!nextPoint) {
@@ -63,16 +67,35 @@ export default {
                 nextPoint = interpolation[0]
             }
             this.setters.updateVehiclePosition(vehicleEntity.vehicleIdx, nextPoint)
-            this.vehicles.setVehicleHeading(vehicleEntity, nextPoint)
+            // this.vehicles.setVehicleHeading(vehicleEntity, nextPoint)
         }, 33)
     },
 
-    setVehicleHeading(vehicleEntity, position) {
-        if(!vehicleEntity || !position) return;
-        const headingRad = Cesium.Math.toRadians(position.heading);
-        const hpr = new Cesium.HeadingPitchRoll(headingRad, 0, 0)
-        const posCartesan = Cesium.Cartesian3(position.lng, position.lat, position.alt)
-        const orientation = Cesium.Transforms.headingPitchRollQuaternion(posCartesan, hpr)
-        vehicleEntity.orientation = orientation;
+    // setVehicleHeading(vehicleEntity, position) {
+    //     if(!vehicleEntity || !position) return;
+    //     const headingRad = Cesium.Math.toRadians(position.heading);
+    //     const hpr = new Cesium.HeadingPitchRoll(headingRad, 0, 0)
+    //     const posCartesan = Cesium.Cartesian3(position.lng, position.lat, position.alt)
+    //     const orientation = Cesium.Transforms.headingPitchRollQuaternion(posCartesan, hpr)
+    //     vehicleEntity.orientation = orientation;
+    // },
+
+    clearAllVehicles() {
+        if(!this.state.map) return;
+
+        const vehicleEntities = this.getters.getVehicles();
+        for(const ve of vehicleEntities) {
+            clearInterval(ve.movementInterval);
+            this.state.map.entities.remove(ve);
+        }
+    },
+
+    async sendCotMessages() {
+        for(const [idx, position] of Object.entries(this.state.vehiclePositions)) {
+            const vehicleEntity = this.getters.getVehicleByIdx(idx)
+            if(!vehicleEntity) continue;
+            const name = vehicleEntity.name;
+            await invoke("send_cot_message", {data: {...position, name}})
+        }
     }
 }

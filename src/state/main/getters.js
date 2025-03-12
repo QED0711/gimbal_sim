@@ -103,6 +103,14 @@ const getters = {
         return entities.filter(e => Boolean(e.id.match(/^VEHICLE-/i)))
     },
 
+    getVehicleByIdx(idx) {
+        const vehicles = this.getters.getVehicles()
+        for(const vehicleEntity of vehicles) {
+            const entityIdx = vehicleEntity.id.split("-")[1]
+            if(idx == entityIdx) return vehicleEntity;
+        }
+    },
+
     getVehiclePosition(idx) {
         return this.state.vehiclePositions[idx] ?? null
     },

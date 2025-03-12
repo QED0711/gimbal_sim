@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import * as Cesium from "cesium";
 
 
@@ -32,11 +32,13 @@ export default function MapContainer() {
         mainPaths.gamepadType,
         mainPaths.cameraType,
         mainPaths.clouds,
-        mainPaths.selectedMissionIndex
+        mainPaths.selectedMissionIndex,
+        mainPaths.sendCot,
     ]);
     const [record, setRecord] = useState(false);
     const [imageQuality, setImageQuality] = useState(0.3);
     const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+    const cotIntervalRef = useRef(null);
 
     // EVENTS
     const handleOpenRoutePlanner = () => {
@@ -175,6 +177,7 @@ export default function MapContainer() {
         if(state.map && mission) {
             const position = mainManager.getters.getPosition()
             setSunlitTime(position.lat, position.lng)
+            mainManager.vehicles.clearAllVehicles();
             for (let i = 0; i < mission.vehicles.length; i++) {
                 const vehicle = mission.vehicles[i];
                 console.log({vehicle})
@@ -182,6 +185,13 @@ export default function MapContainer() {
             }
         }
     }, [state.selectedMissionIndex, state.map])
+
+    useEffect(() => {
+        clearInterval(cotIntervalRef.current)
+        if(state.sendCot) {
+            cotIntervalRef.current = setInterval(mainManager.vehicles.sendCotMessages, 333)
+        }
+    }, [state.sendCot])
 
     // EO/IR 
     useEffect(() => {
@@ -287,9 +297,15 @@ export default function MapContainer() {
                             </select>
                         </label>
                         <hr />
+                        <label>
+                            <input type="checkbox" value={state.sendCot} onChange={e => mainManager.setters.setSendCot(e.target.checked)} />
+                            Send CoT Tracks
+                        </label>
+                        <hr />
                         <button onClick={handleOpenRoutePlanner} className="px-2 mt-1 bg-gray-100 rounded-sm shadow-sm shadow-black cursor-pointer">
                             <FaMapLocationDot size={"2rem"} className="inline-block cursor-pointer " /> Planner
                         </button>
+
                     </>
                 }
 

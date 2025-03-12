@@ -62,6 +62,7 @@ const stateSchema = {
     gamepad: null,
 
     vehiclePositions: {},
+    sendCot: false,
 }
 
 export default stateSchema;

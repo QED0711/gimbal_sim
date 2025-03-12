@@ -6,6 +6,7 @@ mod utils;
 mod config;
 mod cmd;
 mod klv;
+mod cot;
 
 use std::{ sync::{Arc, Mutex}, env};
 use gstreamer as gst;
@@ -14,6 +15,9 @@ use utils::{AppSharedState, start_image_processing_thread, start_hud_processing_
 use clap::Parser;
 use config::{parse_config, retrieve_config, Args};
 use cmd::{data::{send_video_packet, send_hud_packet, send_metadata_packet}, stream::{ImageType, create_video_appsrc, create_klv_appsrc, create_pipeline_simple, create_pipeline, start_pipeline, pause_pipeline}};
+use cot::{cot::{CotData, create_cot_xml, send_cot_message}, sender::{start_udp_sender, CotUdpCommand, UdpSenderHandle}};
+// use cot::cot::{self, create_cot_xml}{CotData, create_cot_xml};
+// use cot::sender{start_udp_sender, create_cot_xml}
 
 
 fn main() {
@@ -67,8 +71,13 @@ fn main() {
     start_image_processing_thread(Arc::clone(&shared_state_arc), video_rate); 
     start_hud_processing_thread(Arc::clone(&shared_state_arc), hud_rate);
 
+    // Initialize the UDP sender thread (adjust multicast address and port as needed).
+    let udp_tx = start_udp_sender("239.2.3.1", 6969);
+    let udp_sender_handle = UdpSenderHandle(Arc::new(Mutex::new(udp_tx)));
+
     tauri::Builder::default()
         .manage(Arc::clone(&shared_state_arc))
+        .manage(udp_sender_handle)
         .invoke_handler(tauri::generate_handler![
             start_pipeline,
             pause_pipeline,
@@ -76,6 +85,7 @@ fn main() {
             send_hud_packet,
             send_metadata_packet,
             retrieve_config,
+            send_cot_message,            
         ])
         .plugin(tauri_plugin_gamepad::init())
         .run(tauri::generate_context!())
