@@ -95,7 +95,7 @@ export default {
             const vehicleEntity = this.getters.getVehicleByIdx(idx)
             if(!vehicleEntity) continue;
             const name = vehicleEntity.name;
-            await invoke("send_cot_message", {data: {...position, name}})
+            await invoke("send_cot_message", {data: {...position, alt: 0.0, name}}) // override alt to be 0 so everything appears on the ground
         }
     }
 }
