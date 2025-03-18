@@ -2,42 +2,40 @@ import * as Cesium from "cesium";
 
 const getters = {
 
-    getSelectedMission(){
+    getSelectedMission() {
         return this.state.missions[this.state.selectedMissionIndex]
     },
 
-    getCoordinateAtPixel({x, y}) {
-        if(!this.state.map) return null;
+    getCoordinateAtPixel({ x, y }) {
+        if (!this.state.map) return null;
         const map = this.state.map;
+        const terrainProvider = this.state.map.terrainProvider
+
         x ??= window.innerWidth / 2;
         y ??= window.innerHeight / 2;
 
         const pixelPosition = new Cesium.Cartesian2(x, y);
-        let cartesianPosition = map.scene.pickPosition(pixelPosition);
-        // const cartesianPosition = map.camera.pickEllipsoid(pixelPosition, map.scene.globe.ellipsoid);
 
-        // use a fallback in to calculate position if pickPosition is not accurate
-        if(!cartesianPosition) {
-            const ray = map.camera.getPickRay(pixelPosition);
-            cartesianPosition = map.scene.globe.pick(ray, map.scene);
-        }
+        const ray = map.camera.getPickRay(pixelPosition);
+        if (!ray) return null;
 
-        if(!cartesianPosition) return null;
+        const cartesianPosition = map.scene.globe.pick(ray, map.scene);
 
-        const cartographicPosition = Cesium.Cartographic.fromCartesian(cartesianPosition);
+        if (!cartesianPosition) return null;
 
+        let cartographicPosition = Cesium.Cartographic.fromCartesian(cartesianPosition);
 
         const lat = Cesium.Math.toDegrees(cartographicPosition.latitude);
         const lng = Cesium.Math.toDegrees(cartographicPosition.longitude);
         const alt = cartographicPosition.height;
 
-        return {lat, lng, alt};
+        return { lat, lng, alt };
 
     },
 
-    getFov(){
+    getFov() {
         const camera = this.state.map?.camera;
-        if(!camera) return;
+        if (!camera) return;
 
         return {
             hfov: Cesium.Math.toDegrees(camera.frustum.fov),
@@ -45,7 +43,7 @@ const getters = {
         };
     },
 
-    getMetadata(){
+    getMetadata() {
         const aircraft = this.state.aircraft;
         const position = this.state.position;
         const gimbal = this.state.gimbal;
@@ -72,42 +70,46 @@ const getters = {
 
             sensorLatitude: position.lat,
             sensorLongitude: position.lng,
-            sensorTrueAltitude: position.alt, 
+            // sensorLatitude: frameCenter?.lat ?? 0.0,
+            // sensorLongitude: frameCenter?.lng ?? 0.0,
+            sensorTrueAltitude: position.alt,
 
             hfov: fov?.hfov ?? 0.0,
             vfov: fov?.vfov ?? 0.0,
 
-            sensorRelativeAzimuthAngle: relativeAzimuth, 
-            sensorRelativeElevationAngle: gimbal.pitch, 
+            sensorRelativeAzimuthAngle: relativeAzimuth,
+            sensorRelativeElevationAngle: gimbal.pitch,
             sensorRelativeRollAngle: 0.0,
 
             frameCenterLatitude: frameCenter?.lat ?? 0.0,
             frameCenterLongitude: frameCenter?.lng ?? 0.0,
+            // frameCenterLatitude: position.lat,
+            // frameCenterLongitude: position.lng,
             frameCenterAltitude: frameCenter?.alt ?? 0.0,
         }
 
         return metadata;
     },
 
-    getGamepads(){
+    getGamepads() {
         const gamepads = navigator.getGamepads?.();
-        console.log({gamepads});
-        if(gamepads && gamepads.length !== this.state.gamepads.length) {
-            this.setters.setGamepads(gamepads) 
+        console.log({ gamepads });
+        if (gamepads && gamepads.length !== this.state.gamepads.length) {
+            this.setters.setGamepads(gamepads)
         }
     },
 
     getVehicles() {
         const entities = this.state.map?.entities?._entities?._array
-        if(!entities) return [];
+        if (!entities) return [];
         return entities.filter(e => Boolean(e.id.match(/^VEHICLE-/i)))
     },
 
     getVehicleByIdx(idx) {
         const vehicles = this.getters.getVehicles()
-        for(const vehicleEntity of vehicles) {
+        for (const vehicleEntity of vehicles) {
             const entityIdx = vehicleEntity.id.split("-")[1]
-            if(idx == entityIdx) return vehicleEntity;
+            if (idx == entityIdx) return vehicleEntity;
         }
     },
 

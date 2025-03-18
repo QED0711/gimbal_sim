@@ -11,11 +11,11 @@ const setters = {
         });
     },
 
-    toggleGimbalLock(){
+    async toggleGimbalLock(){
+        const centerCoord = this.getters.getCoordinateAtPixel({});
         this.setState(prevState => {
             const isLocked = !prevState.gimbal.isLocked;
             if(isLocked) {
-                const centerCoord = this.getters.getCoordinateAtPixel({});
                 return [
                     {gimbal: {...prevState.gimbal, isLocked, target: centerCoord}},
                     [this.paths.gimbal.isLocked, this.paths.gimbal.target]
@@ -29,9 +29,9 @@ const setters = {
         })
     },
 
-    setTargetToCenterScreen(){
-        this.setState(prevState => {
-            const centerCoord = this.getters.getCoordinateAtPixel({});
+    async setTargetToCenterScreen(){
+        const centerCoord = this.getters.getCoordinateAtPixel({});
+        this.setState( prevState => {
             return [
                 {gimbal: {...prevState.gimbal, target: centerCoord}},
                 [this.paths.gimbal.target]
