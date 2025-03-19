@@ -48,6 +48,7 @@ export default {
             }
         })
         vehicleEntity.vehicleIdx = idx
+        vehicleEntity.cotType = vehicle.cot_type;
 
         this.vehicles.startVehicleMovement(vehicleEntity, interpolation);
 
@@ -95,7 +96,7 @@ export default {
             const vehicleEntity = this.getters.getVehicleByIdx(idx)
             if(!vehicleEntity) continue;
             const name = vehicleEntity.name;
-            await invoke("send_cot_message", {data: {...position, alt: 0.0, name}}) // override alt to be 0 so everything appears on the ground
+            await invoke("send_cot_message", {data: {...position, alt: 0.0, name, cot_type: vehicleEntity.cotType}}) // override alt to be 0 so everything appears on the ground
         }
     }
 }

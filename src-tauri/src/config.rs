@@ -62,6 +62,7 @@ impl Default for Orbit {
 pub struct Vehicle {
     model: String,
     name: String,
+    cot_type: String,
     route: Vec<Location>,
     speed: i32,
     broadcast_cot: bool
@@ -72,6 +73,7 @@ impl Default for Vehicle {
         Vehicle {
             model: "whiteCar".to_string(), 
             name: "".to_string(),
+            cot_type: "a-u-G".to_string(), // defaults to atom-unknown-ground
             route: vec![], 
             speed: 0, 
             broadcast_cot: false

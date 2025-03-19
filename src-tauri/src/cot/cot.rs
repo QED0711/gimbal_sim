@@ -19,6 +19,7 @@ pub struct CotData {
     pub lng: f64,
     pub alt: f64,
     pub name: String,
+    pub cot_type: String,
 }
 
 /// Converts the provided CotData into a valid Cursor on Target (CoT) XML string.
@@ -28,9 +29,10 @@ pub fn create_cot_xml(data: &CotData) -> String {
     let stale_str = (now + Duration::minutes(5)).format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string();
 
     let uid = format!("{}", data.name);
+    let cot_type = format!("{}", data.cot_type);
 
     format!(
-        r#"<event version="2.0" uid="{uid}" type="a-f-G-U-C" how="m-g" time="{time_str}" start="{time_str}" stale="{stale_str}">
+        r#"<event version="2.0" uid="{uid}" type="{cot_type}" how="m-g" time="{time_str}" start="{time_str}" stale="{stale_str}">
     <point lat="{lat}" lon="{lng}" hae="{alt}" ce="9999.0" le="9999.0"/>
     <detail>
       <contact callsign="{name}" />
