@@ -135,6 +135,8 @@ impl Default for GamepadLayout {
 pub struct Config {
     pub stream_address: String,
     pub stream_port: String, 
+    pub cot_address: String,
+    pub cot_port: String, 
     pub terrain_rendering_threshold: f32,
     pub fps: i32,
     pub gamepad_layout: GamepadLayout,
@@ -154,6 +156,8 @@ impl Default for Config {
         Config {
             stream_address: "127.0.0.1".to_string(),
             stream_port: "15000".to_string(),
+            cot_address: "239.1.3.2".to_string(),
+            cot_port: "6969".to_string(),
             terrain_rendering_threshold: 2.0,
             fps: 30,
             hud_fps: 5,

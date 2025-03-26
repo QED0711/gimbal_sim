@@ -71,8 +71,8 @@ fn main() {
     start_image_processing_thread(Arc::clone(&shared_state_arc), video_rate); 
     start_hud_processing_thread(Arc::clone(&shared_state_arc), hud_rate);
 
-    // Initialize the UDP sender thread (adjust multicast address and port as needed).
-    let udp_tx = start_udp_sender("239.2.3.1", 6969);
+    // Initialize the UDP sender thread for cot messages.
+    let udp_tx = start_udp_sender(&config.cot_address, &config.cot_port);
     let udp_sender_handle = UdpSenderHandle(Arc::new(Mutex::new(udp_tx)));
 
     tauri::Builder::default()

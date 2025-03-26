@@ -27,8 +27,8 @@ export default function init() {
         for (const [gpIdx, gamepad] of Object.entries(gamepads)) {
             if (!gamepad) return;
 
-            gamepad.buttons.forEach((button, i) => {if(button.value !== 0) console.log(`${gpIdx}: BUTTON ${i}:`, button.value)});
-            gamepad.axes.forEach((axis, i) => {if(axis !== 0) console.log(`${gpIdx}: AXIS ${i}:`, axis)});
+            gamepad.buttons.forEach((button, i) => { if (button.value !== 0) console.log(`${gpIdx}: BUTTON ${i}:`, button.value) });
+            gamepad.axes.forEach((axis, i) => { if (axis !== 0) console.log(`${gpIdx}: AXIS ${i}:`, axis) });
 
             let yawAxes = 0,
                 pitchAxes = 0,
@@ -52,15 +52,17 @@ export default function init() {
 
 
             if (yawAxes) {
+                const zoomFactor = mainManager.getters.getGimbal_zoomAmount();
                 yawAxes > 0
-                    ? mainManager.setters.increaseGimbalHeading(yawAxes)
-                    : mainManager.setters.decreaseGimbalHeading(yawAxes * -1)
+                    ? mainManager.setters.increaseGimbalHeading(yawAxes * (1 / zoomFactor))
+                    : mainManager.setters.decreaseGimbalHeading(yawAxes * -1 * (1/zoomFactor))
             }
 
             if (pitchAxes) {
+                const zoomFactor = mainManager.getters.getGimbal_zoomAmount();
                 pitchAxes > 0
-                    ? mainManager.setters.decreaseGimbalPitch(pitchAxes)
-                    : mainManager.setters.increaseGimbalPitch(pitchAxes * -1)
+                    ? mainManager.setters.decreaseGimbalPitch(pitchAxes * 1 * (1 / zoomFactor))
+                    : mainManager.setters.increaseGimbalPitch(pitchAxes * -1 * (1 / zoomFactor))
             }
 
             if (zoomAxes) {

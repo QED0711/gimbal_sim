@@ -11,7 +11,7 @@ pub enum CotUdpCommand {
 
 /// Starts the UDP sender thread. The thread binds a UDP socket and waits for commands
 /// on a channel. When it receives a CoT message, it sends it over UDP to the given multicast address.
-pub fn start_udp_sender(multicast_addr: &str, port: u16) -> Sender<CotUdpCommand> {
+pub fn start_udp_sender(multicast_addr: &str, port: &str) -> Sender<CotUdpCommand> {
     let (tx, rx): (Sender<CotUdpCommand>, Receiver<CotUdpCommand>) = mpsc::channel();
     let multicast_socket_addr: SocketAddrV4 = format!("{multicast_addr}:{port}")
         .parse()

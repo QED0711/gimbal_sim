@@ -174,13 +174,13 @@ export default function MapContainer() {
     // render vehicles
     useEffect(() => {
         const mission = mainManager.getters.getSelectedMission();
-        if(state.map && mission) {
+        if (state.map && mission) {
             const position = mainManager.getters.getPosition()
             setSunlitTime(position.lat, position.lng)
             mainManager.vehicles.clearAllVehicles();
             for (let i = 0; i < mission.vehicles.length; i++) {
                 const vehicle = mission.vehicles[i];
-                console.log({vehicle})
+                console.log({ vehicle })
                 mainManager.vehicles.registerVehicleModel(vehicle, i);
             }
         }
@@ -188,7 +188,7 @@ export default function MapContainer() {
 
     useEffect(() => {
         clearInterval(cotIntervalRef.current)
-        if(state.sendCot) {
+        if (state.sendCot) {
             cotIntervalRef.current = setInterval(mainManager.vehicles.sendCotMessages, 333)
         }
     }, [state.sendCot])
@@ -300,6 +300,8 @@ export default function MapContainer() {
                         <label>
                             <input type="checkbox" value={state.sendCot} onChange={e => mainManager.setters.setSendCot(e.target.checked)} />
                             Send CoT Tracks
+                            <br />
+                            <em className="block text-left text-sm text-black">udp://{window._initConfig.cot_address}:{window._initConfig.cot_port}</em>
                         </label>
                         <hr />
                         <button onClick={handleOpenRoutePlanner} className="px-2 mt-1 bg-gray-100 rounded-sm shadow-sm shadow-black cursor-pointer">
