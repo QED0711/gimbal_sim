@@ -17,6 +17,7 @@ export default function FooterControls() {
     // EVENTS
     const handleHeadingChange = e => {
         let val = parseFloat(e.target.value);
+        if(isNaN(val)) return;
         val = betweenRange(val, -1, 360);
         if(val === -1) val = 359;
         if(val === 360) val = 0;
@@ -25,12 +26,14 @@ export default function FooterControls() {
 
     const handlePitchChange = e => {
         let val = parseFloat(e.target.value);
+        if(isNaN(val)) return;
         val = betweenRange(val, -90, 90);
         mainManager.setters.setAircraft_pitch(val)
     }
 
     const handleSpeedChange = e => {
         let val = parseFloat(e.target.value);
+        if(isNaN(val)) return;
         val = betweenRange(val, 0, 9999);
         mainManager.setters.setAircraft_velocity(val / 2.23694) // convert to meters per second
     }
