@@ -9,7 +9,6 @@ const getters = {
     getCoordinateAtPixel({ x, y }) {
         if (!this.state.map) return null;
         const map = this.state.map;
-        const terrainProvider = this.state.map.terrainProvider
 
         x ??= window.innerWidth / 2;
         y ??= window.innerHeight / 2;
@@ -49,6 +48,7 @@ const getters = {
         const gimbal = this.state.gimbal;
         const frameCenter = this.getters.getCoordinateAtPixel({}); // defaults to frame center if no pixel given;
         const fov = this.getters.getFov();
+        const mission = this.getters.getSelectedMission();
 
         let relativeAzimuth = gimbal.heading - aircraft.heading;
         relativeAzimuth = relativeAzimuth >= 0 ? relativeAzimuth : relativeAzimuth + 360;
@@ -70,8 +70,6 @@ const getters = {
 
             sensorLatitude: position.lat,
             sensorLongitude: position.lng,
-            // sensorLatitude: frameCenter?.lat ?? 0.0,
-            // sensorLongitude: frameCenter?.lng ?? 0.0,
             sensorTrueAltitude: position.alt,
 
             hfov: fov?.hfov ?? 0.0,
@@ -83,9 +81,7 @@ const getters = {
 
             frameCenterLatitude: frameCenter?.lat ?? 0.0,
             frameCenterLongitude: frameCenter?.lng ?? 0.0,
-            // frameCenterLatitude: position.lat,
-            // frameCenterLongitude: position.lng,
-            frameCenterAltitude: frameCenter?.alt ?? 0.0,
+            frameCenterAltitude: (frameCenter?.alt ?? 0.0) + (mission?.alt_correction ?? 0),
         }
 
         return metadata;

@@ -15,9 +15,7 @@ import { FaMapLocationDot, FaMinimize, FaMinus, FaPlus } from "react-icons/fa6";
 
 // ========================== CONSTANTS ========================== 
 import { CAMERA_TYPE, GAMEPAD_TYPE } from '../../utils/general'
-import models from "../../utils/models";
 import { setSunlitTime } from "../../utils/map";
-
 
 export default function MapContainer() {
     // STATE
@@ -34,6 +32,7 @@ export default function MapContainer() {
         mainPaths.clouds,
         mainPaths.selectedMissionIndex,
         mainPaths.sendCot,
+        mainPaths.moversActive,
     ]);
     const [record, setRecord] = useState(false);
     const [imageQuality, setImageQuality] = useState(0.3);
@@ -71,7 +70,10 @@ export default function MapContainer() {
         const exec = async () => {
 
             window.CESIUM_BASE_URL = "/cesium";
+
+            let TERRAIN = {}
             Cesium.Ion.defaultAccessToken = window._initConfig.ion_access_token;
+            TERRAIN = { terrain: Cesium.Terrain.fromWorldTerrain() }
 
             const viewer = new Cesium.Viewer("map", {
                 contextOptions: {
@@ -81,7 +83,10 @@ export default function MapContainer() {
                 },
                 // imageryProvider: new Cesium.UrlTemplateImageryProvider({url: "https://a.tile.openstreetmap.org/"}),
                 imageryProvider: undefined,
-                terrain: !!window._initConfig.ion_access_token ? Cesium.Terrain.fromWorldTerrain() : undefined,
+                // ...TERRAIN,
+                terrain: !!window._initConfig.ion_access_token ? Cesium.Terrain.fromWorldTerrain() : undefined, // THIS IS THE DEFAULT WORKING ONE
+                // terrainProvider: TERRAIN,
+                // terrainProvider: Cesium.CesiumTerrainProvider.fromUrl("https://localhost/vector_maps_files/quantized_mesh_12", {requestVertexNormals: true }),
                 animation: false, // Don't create an animation widget
                 baseLayerPicker: false, // Don't create a base layer picker widget
                 fullscreenButton: false, // Don't create a full screen button widget
@@ -300,6 +305,12 @@ export default function MapContainer() {
                         <label>
                             <input type="checkbox" value={state.sendCot} onChange={e => mainManager.setters.setSendCot(e.target.checked)} />
                             Send CoT Tracks
+                            <br />
+                            <em className="block text-left text-sm text-black">udp://{window._initConfig.cot_address}:{window._initConfig.cot_port}</em>
+                        </label>
+                        <label>
+                            <input type="checkbox" value={state.moversActive} onChange={e => mainManager.setters.setMoversActive(e.target.checked)} />
+                            Activate Movers 
                             <br />
                             <em className="block text-left text-sm text-black">udp://{window._initConfig.cot_address}:{window._initConfig.cot_port}</em>
                         </label>

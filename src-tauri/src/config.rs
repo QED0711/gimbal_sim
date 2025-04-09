@@ -90,6 +90,7 @@ pub struct MissionTemplate {
     orientation: Orientation,
     target_location: Option<Location>,
     target_lock: bool,
+    alt_correction: f32,
     orbit: Orbit, 
     vehicles: Vec<Vehicle>,
 }
@@ -102,6 +103,7 @@ impl Default for MissionTemplate {
             orientation: Orientation::default(),
             target_location: None,
             target_lock: false,
+            alt_correction: 0.0,
             orbit: Orbit::default(),
             vehicles: vec![],
         }
@@ -116,6 +118,7 @@ pub struct GamepadLayout {
     zoom_axis: i8,
     lock_button: i8,
     camera_type_button: i8,
+    mission_swap_button: i8,
 }
 
 impl Default for GamepadLayout {
@@ -125,7 +128,8 @@ impl Default for GamepadLayout {
             pitch_axis: -1, 
             zoom_axis: -1,
             lock_button: -1,
-            camera_type_button: -1
+            camera_type_button: -1,
+            mission_swap_button: -1,
         }
     }
 }
@@ -143,6 +147,7 @@ pub struct Config {
     pub hud_fps: i32,
     pub overlay_alpha: f32,
     pub ion_access_token: Option<String>, 
+    pub terrain_url: Option<String>,
     pub background_tile_url: Option<String>,
     pub vector_tile_url: Option<String>,
 
@@ -162,6 +167,7 @@ impl Default for Config {
             fps: 30,
             hud_fps: 5,
             overlay_alpha: 0.5,
+            terrain_url: None,
             ion_access_token: None,
             background_tile_url: None, 
             vector_tile_url: None, 

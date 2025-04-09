@@ -2,6 +2,7 @@ import "tauri-plugin-gamepad-api";
 import mainManager from "../state/main/mainManager";
 import { GAMEPAD_TYPE } from "./general";
 
+window._missionSwapCount = -1;
 
 const buttonStates = {}
 const getMomentaryButton = (gamepad, idx, name) => {
@@ -34,7 +35,8 @@ export default function init() {
                 pitchAxes = 0,
                 zoomAxes = 0,
                 toggleLock = 0,
-                toggleCameraType = 0;
+                toggleCameraType = 0,
+                missionSwap = 0;
             switch (gamepadType) {
                 case GAMEPAD_TYPE.CONTROLLER:
                     yawAxes = gamepad.axes[window._initConfig?.gamepad_layout?.yaw_axis ?? -1];
@@ -42,6 +44,7 @@ export default function init() {
                     zoomAxes = gamepad.axes[window._initConfig?.gamepad_layout?.zoom_axis ?? -1] * -1;
                     toggleLock = getMomentaryButton(gamepad, window._initConfig?.gamepad_layout?.lock_button ?? -1, "toggleLock");
                     toggleCameraType = getMomentaryButton(gamepad, window._initConfig?.gamepad_layout?.camera_type_button ?? -1, "toggleCameraType")
+                    missionSwap = getMomentaryButton(gamepad, window._initConfig?.gamepad_layout?.mission_swap_button ?? -1, "missionSwapper")
                     break;
                 case GAMEPAD_TYPE.JOYSTICK:
                     yawAxes = gamepad.axes[1];
@@ -77,6 +80,15 @@ export default function init() {
 
             if (toggleCameraType) {
                 mainManager.setters.toggleCameraType();
+            }
+
+            if(missionSwap) {
+                clearTimeout(window._missionSwapCountTimeout);
+                window._missionSwapCount += 1
+                window._missionSwapCountTimeout = setTimeout(() =>{
+                    mainManager.setters.changeSelectedMission(window._missionSwapCount)
+                    window._missionSwapCount = -1;
+                }, 500)
             }
         }
     }, 25)

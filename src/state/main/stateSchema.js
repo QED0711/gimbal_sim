@@ -63,6 +63,7 @@ const stateSchema = {
 
     vehiclePositions: {},
     sendCot: false,
+    moversActive: false,
 }
 
 export default stateSchema;

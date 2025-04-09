@@ -60,6 +60,7 @@ export default {
         vehicleEntity.routeIdx = 0;
 
         vehicleEntity.movementInterval = setInterval(() => {
+            if(!this.getters.getMoversActive()) return; // if movers aren't active, just don't move them. Cot will still send though
 
             vehicleEntity.routeIdx += 1
             let nextPoint = interpolation[vehicleEntity.routeIdx]
@@ -68,18 +69,8 @@ export default {
                 nextPoint = interpolation[0]
             }
             this.setters.updateVehiclePosition(vehicleEntity.vehicleIdx, nextPoint)
-            // this.vehicles.setVehicleHeading(vehicleEntity, nextPoint)
         }, 33)
     },
-
-    // setVehicleHeading(vehicleEntity, position) {
-    //     if(!vehicleEntity || !position) return;
-    //     const headingRad = Cesium.Math.toRadians(position.heading);
-    //     const hpr = new Cesium.HeadingPitchRoll(headingRad, 0, 0)
-    //     const posCartesan = Cesium.Cartesian3(position.lng, position.lat, position.alt)
-    //     const orientation = Cesium.Transforms.headingPitchRollQuaternion(posCartesan, hpr)
-    //     vehicleEntity.orientation = orientation;
-    // },
 
     clearAllVehicles() {
         if(!this.state.map) return;
