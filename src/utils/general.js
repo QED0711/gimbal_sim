@@ -28,3 +28,8 @@ export const formatTime = (milliseconds) => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secondsLeft.toString().padStart(2, '0')}`
 
 }
+
+export function isEarlySecondOfMinute(date, threshold) {
+    date ??= new Date();
+    return date.getSeconds() <= (threshold ?? 0);
+}

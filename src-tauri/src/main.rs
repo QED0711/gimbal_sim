@@ -8,7 +8,7 @@ mod cmd;
 mod klv;
 mod cot;
 
-use std::{ sync::{Arc, Mutex}, env};
+use std::{ env, sync::{Arc, Mutex}, time::{SystemTime, UNIX_EPOCH}};
 use gstreamer as gst;
 
 use utils::{AppSharedState, start_image_processing_thread, start_hud_processing_thread};
@@ -74,6 +74,13 @@ fn main() {
     // Initialize the UDP sender thread for cot messages.
     let udp_tx = start_udp_sender(&config.cot_address, &config.cot_port);
     let udp_sender_handle = UdpSenderHandle(Arc::new(Mutex::new(udp_tx)));
+
+    // std::thread::spawn(|| {
+    //     loop {
+    //         println!("BACKEND ALIVE! {:?}", SystemTime::now().duration_since(UNIX_EPOCH).expect("time error"));
+    //         std::thread::sleep(std::time::Duration::from_secs(5));
+    //     }
+    // });
 
     tauri::Builder::default()
         .manage(Arc::clone(&shared_state_arc))

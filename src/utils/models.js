@@ -14,4 +14,14 @@ export default {
         scale: 1.5,
         headingAdjustment: -90,
     },
+    whiteSuv: {
+        path: "/models/white_suv.glb",
+        scale: 1.5,
+        headingAdjustment: -90,
+    },
+    tel: {
+        path: "/models/tel.glb",
+        scale: 2,
+        headingAdjustment: -90,
+    },
 }

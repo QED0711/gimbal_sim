@@ -63,6 +63,8 @@ pub struct Vehicle {
     model: String,
     name: String,
     cot_type: String,
+    convoy_num: i8,
+    convoy_delay: i8,
     route: Vec<Location>,
     speed: i32,
     broadcast_cot: bool
@@ -74,6 +76,8 @@ impl Default for Vehicle {
             model: "whiteCar".to_string(), 
             name: "".to_string(),
             cot_type: "a-u-G".to_string(), // defaults to atom-unknown-ground
+            convoy_num: 1,
+            convoy_delay: 0,
             route: vec![], 
             speed: 0, 
             broadcast_cot: false
@@ -119,6 +123,7 @@ pub struct GamepadLayout {
     lock_button: i8,
     camera_type_button: i8,
     mission_swap_button: i8,
+    toggle_movers: i8,
 }
 
 impl Default for GamepadLayout {
@@ -130,6 +135,7 @@ impl Default for GamepadLayout {
             lock_button: -1,
             camera_type_button: -1,
             mission_swap_button: -1,
+            toggle_movers: -1,
         }
     }
 }
@@ -150,6 +156,7 @@ pub struct Config {
     pub terrain_url: Option<String>,
     pub background_tile_url: Option<String>,
     pub vector_tile_url: Option<String>,
+    
 
     pub mission_templates: Vec<MissionTemplate>,
 }

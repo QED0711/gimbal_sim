@@ -189,7 +189,7 @@ const setters = {
                 isLocked: !!mission.target_lock
             }
             const orbit = mission.orbit;
-            console.log("FIRED")
+            orbit.rate *= 1000 // adjust for rate in ms
             setSunlitTime(position.lat, position.lng);
 
             return [
@@ -199,6 +199,7 @@ const setters = {
                     aircraft,
                     gimbal,
                     orbit,
+                    manualAltCorrection: 0, // reset manual alt correction on each mission change
                 },
                 [
                     this.paths.selectedMissionIndex,
@@ -206,6 +207,7 @@ const setters = {
                     this.paths.aircraft,
                     this.paths.gimbal,
                     this.paths.orbit,
+                    this.paths.manualAltCorrection,
                 ]
             ]
         }, () => {
@@ -246,6 +248,12 @@ const setters = {
             const vehiclePositions = prevState.vehiclePositions;
             vehiclePositions[idx] = position
             return [{vehiclePositions}, []] // this intentionally doesn't say anything was changed to avoid a state that might trigger re-renders 
+        })
+    },
+
+    toggleMovers() {
+        this.setState(prevState => {
+            return [{moversActive: !prevState.moversActive}, [this.paths.moversActive]];
         })
     }
 

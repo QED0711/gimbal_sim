@@ -6,6 +6,7 @@ const stateSchema = {
 
     imageDimensions: { width: 1280, height: 720 },
     map: null,
+    validWebGlContext: true,
     imageryLayer: null,
     cameraType: CAMERA_TYPE.EO,
     hud: null,
@@ -64,6 +65,8 @@ const stateSchema = {
     vehiclePositions: {},
     sendCot: false,
     moversActive: false,
+
+    manualAltCorrection: 0,
 }
 
 export default stateSchema;

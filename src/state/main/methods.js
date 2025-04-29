@@ -67,17 +67,45 @@ const methods = {
 
     sendImage(imageQuality) {
         if (!this.state.map) return;
+        const canvas = this.state.map.canvas
+        if (canvas === null || canvas.width === 0 || canvas.height === 0) return;
 
-        this.state.map.canvas.toBlob(blob => {
-            const reader = new FileReader();
+        const validWebGlContext = this.getters.getValidWebGlContext();
+        if(!validWebGlContext) {
+            console.warn("Skipping frame fro bad webgl context");
+            return;
+        }
+        
 
-            reader.onload = async function () {
-                const arrayBuffer = reader.result;
-                const data = Array.from(new Uint8Array(arrayBuffer));
-                await invoke("send_video_packet", { imageArr: data });
-            }
-            reader.readAsArrayBuffer(blob);
-        }, "image/jpeg", imageQuality);
+
+        try {
+            canvas.toBlob(blob => {
+                if (!blob) {
+                    console.warn("toBlob returned null. Possibly due to lost WebGL context.");
+                    return;
+                }
+
+                const reader = new FileReader();
+
+                reader.onload = async function () {
+                    try {
+                        const arrayBuffer = reader.result;
+                        const data = Array.from(new Uint8Array(arrayBuffer));
+                        await invoke("send_video_packet", { imageArr: data });
+                    } catch (err) {
+                        console.error("SEND_IMAGE: ", err)
+                    }
+                }
+
+                reader.onerror = function (e) {
+                    console.error("Frame Read Error: ", err);
+                }
+
+                reader.readAsArrayBuffer(blob);
+            }, "image/jpeg", imageQuality);
+        } catch (err) {
+            console.error("failed during toBlob: ", err)
+        }
     },
 
     sendHud(imageQuality) {
@@ -98,9 +126,13 @@ const methods = {
     async sendMetadata() {
         if (!this.state.map) return;
 
-        const metadata = this.getters.getMetadata();
-        if (!metadata) return;
-        await invoke("send_metadata_packet", { metadata })
+        try {
+            const metadata = this.getters.getMetadata();
+            if (!metadata) return;
+            await invoke("send_metadata_packet", { metadata })
+        } catch (err) {
+            console.error("METADATA SEND: ", err)
+        }
     },
 
     updateAtmosphereOcclusion() {
@@ -113,7 +145,7 @@ const methods = {
             : Cesium.Color.WHITE.withAlpha(atmosphereLevel)
     },
 
-    addCloudRect(cloudImg, alpha, height, map, position){
+    addCloudRect(cloudImg, alpha, height, map, position) {
         return map.entities.add({
             rectangle: {
                 coordinates: Cesium.Rectangle.fromDegrees(position.lng - 2, position.lat - 2, position.lng + 2, position.lat + 2),
@@ -126,7 +158,7 @@ const methods = {
             }
         })
 
-    }, 
+    },
 
     updateCloudLayers() {
         const map = this.state.map;

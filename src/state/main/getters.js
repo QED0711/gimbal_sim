@@ -7,28 +7,35 @@ const getters = {
     },
 
     getCoordinateAtPixel({ x, y }) {
-        if (!this.state.map) return null;
         const map = this.state.map;
+        if (!map || !map.camera || !map.scene || !map.scene.globe) return null;
 
-        x ??= window.innerWidth / 2;
-        y ??= window.innerHeight / 2;
 
-        const pixelPosition = new Cesium.Cartesian2(x, y);
+        if (typeof x !== 'number' || isNaN(x)) x = window.innerWidth / 2;
+        if (typeof y !== 'number' || isNaN(y)) y = window.innerHeight / 2;
 
-        const ray = map.camera.getPickRay(pixelPosition);
-        if (!ray) return null;
+        try {
+            const pixelPosition = new Cesium.Cartesian2(x, y);
 
-        const cartesianPosition = map.scene.globe.pick(ray, map.scene);
+            const ray = map.camera.getPickRay(pixelPosition);
+            if (!ray) return null;
 
-        if (!cartesianPosition) return null;
+            const cartesianPosition = map.scene.globe.pick(ray, map.scene);
 
-        let cartographicPosition = Cesium.Cartographic.fromCartesian(cartesianPosition);
+            if (!cartesianPosition) return null;
 
-        const lat = Cesium.Math.toDegrees(cartographicPosition.latitude);
-        const lng = Cesium.Math.toDegrees(cartographicPosition.longitude);
-        const alt = cartographicPosition.height;
+            let cartographicPosition = Cesium.Cartographic.fromCartesian(cartesianPosition);
 
-        return { lat, lng, alt };
+            const lat = Cesium.Math.toDegrees(cartographicPosition.latitude);
+            const lng = Cesium.Math.toDegrees(cartographicPosition.longitude);
+            const alt = cartographicPosition.height;
+
+            return { lat, lng, alt };
+        } catch (err) {
+            console.error("Get Coordinate Error: ", err);
+            return null
+        }
+
 
     },
 
@@ -36,55 +43,64 @@ const getters = {
         const camera = this.state.map?.camera;
         if (!camera) return;
 
-        return {
-            hfov: Cesium.Math.toDegrees(camera.frustum.fov),
-            vfov: Cesium.Math.toDegrees(camera.frustum.fovy),
-        };
+        try {
+            return {
+                hfov: Cesium.Math.toDegrees(camera.frustum.fov),
+                vfov: Cesium.Math.toDegrees(camera.frustum.fovy),
+            };
+        } catch(err) {
+            console.error("FOV ERROR: ", err)
+            return null
+        }
     },
 
     getMetadata() {
-        const aircraft = this.state.aircraft;
-        const position = this.state.position;
-        const gimbal = this.state.gimbal;
-        const frameCenter = this.getters.getCoordinateAtPixel({}); // defaults to frame center if no pixel given;
-        const fov = this.getters.getFov();
-        const mission = this.getters.getSelectedMission();
+        try {
+            const aircraft = this.state.aircraft;
+            const position = this.state.position;
+            const gimbal = this.state.gimbal;
+            const frameCenter = this.getters.getCoordinateAtPixel({}); // defaults to frame center if no pixel given;
+            const fov = this.getters.getFov();
+            const mission = this.getters.getSelectedMission();
 
-        let relativeAzimuth = gimbal.heading - aircraft.heading;
-        relativeAzimuth = relativeAzimuth >= 0 ? relativeAzimuth : relativeAzimuth + 360;
+            let relativeAzimuth = gimbal.heading - aircraft.heading;
+            relativeAzimuth = relativeAzimuth >= 0 ? relativeAzimuth : relativeAzimuth + 360;
+            
+            const metadata = {
+                precisionTimeStamp: Date.now(),
+                missionID: mission?.name ?? "MISSION",
+                platformTailNumber: "NTR42",
 
-        const metadata = {
-            precisionTimeStamp: Date.now(),
-            missionID: this.getters.getSelectedMission()?.name ?? "MISSION",
-            platformTailNumber: "NTR42",
+                platformHeadingAngle: aircraft.heading,
+                platformPitchAngle: 0.0, // even if we're reporting a pitch, the relative sensor orientation still assumes 0 pitch in this simulator
+                platformRollAngle: 0.0,
+                platformTrueAirSpeed: Math.round(aircraft.velocity),
 
-            platformHeadingAngle: aircraft.heading,
-            platformPitchAngle: 0.0, // even if we're reporting a pitch, the relative sensor orientation still assumes 0 pitch in this simulator
-            platformRollAngle: 0.0,
-            platformTrueAirSpeed: Math.round(aircraft.velocity),
+                // platformIndicatedAirSpeed: aircraft.velocity,
+                platformDesignation: "TAURI",
+                imageSourceSensor: "gimbal_sim",
+                imageCoordinateSystem: "EPSG:4326",
 
-            // platformIndicatedAirSpeed: aircraft.velocity,
-            platformDesignation: "TAURI",
-            imageSourceSensor: "gimbal_sim",
-            imageCoordinateSystem: "EPSG:4326",
+                sensorLatitude: position.lat,
+                sensorLongitude: position.lng,
+                sensorTrueAltitude: position.alt,
 
-            sensorLatitude: position.lat,
-            sensorLongitude: position.lng,
-            sensorTrueAltitude: position.alt,
+                hfov: fov?.hfov ?? 0.0,
+                vfov: fov?.vfov ?? 0.0,
 
-            hfov: fov?.hfov ?? 0.0,
-            vfov: fov?.vfov ?? 0.0,
+                sensorRelativeAzimuthAngle: relativeAzimuth,
+                sensorRelativeElevationAngle: gimbal.pitch,
+                sensorRelativeRollAngle: 0.0,
 
-            sensorRelativeAzimuthAngle: relativeAzimuth,
-            sensorRelativeElevationAngle: gimbal.pitch,
-            sensorRelativeRollAngle: 0.0,
+                frameCenterLatitude: frameCenter?.lat ?? 0.0,
+                frameCenterLongitude: frameCenter?.lng ?? 0.0,
+                frameCenterAltitude: (frameCenter?.alt ?? 0.0) + (this.state.manualAltCorrection || (mission?.alt_correction ?? 0)),
+            }
 
-            frameCenterLatitude: frameCenter?.lat ?? 0.0,
-            frameCenterLongitude: frameCenter?.lng ?? 0.0,
-            frameCenterAltitude: (frameCenter?.alt ?? 0.0) + (mission?.alt_correction ?? 0),
+            return metadata;
+        } catch (err) {
+            console.error("GET METADATA: ", err)
         }
-
-        return metadata;
     },
 
     getGamepads() {

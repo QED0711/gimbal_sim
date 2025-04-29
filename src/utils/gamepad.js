@@ -28,15 +28,16 @@ export default function init() {
         for (const [gpIdx, gamepad] of Object.entries(gamepads)) {
             if (!gamepad) return;
 
-            gamepad.buttons.forEach((button, i) => { if (button.value !== 0) console.log(`${gpIdx}: BUTTON ${i}:`, button.value) });
-            gamepad.axes.forEach((axis, i) => { if (axis !== 0) console.log(`${gpIdx}: AXIS ${i}:`, axis) });
+            // gamepad.buttons.forEach((button, i) => { if (button.value !== 0 && window.developmentMode) console.log(`${gpIdx}: BUTTON ${i}:`, button.value) });
+            // gamepad.axes.forEach((axis, i) => { if (axis !== 0 && window.developmentMode) console.log(`${gpIdx}: AXIS ${i}:`, axis) });
 
             let yawAxes = 0,
                 pitchAxes = 0,
                 zoomAxes = 0,
                 toggleLock = 0,
                 toggleCameraType = 0,
-                missionSwap = 0;
+                missionSwap = 0,
+                toggleMovers = 0;
             switch (gamepadType) {
                 case GAMEPAD_TYPE.CONTROLLER:
                     yawAxes = gamepad.axes[window._initConfig?.gamepad_layout?.yaw_axis ?? -1];
@@ -45,6 +46,7 @@ export default function init() {
                     toggleLock = getMomentaryButton(gamepad, window._initConfig?.gamepad_layout?.lock_button ?? -1, "toggleLock");
                     toggleCameraType = getMomentaryButton(gamepad, window._initConfig?.gamepad_layout?.camera_type_button ?? -1, "toggleCameraType")
                     missionSwap = getMomentaryButton(gamepad, window._initConfig?.gamepad_layout?.mission_swap_button ?? -1, "missionSwapper")
+                    toggleMovers = getMomentaryButton(gamepad, window._initConfig?.gamepad_layout?.toggle_movers ?? -1, "toggleMovers")
                     break;
                 case GAMEPAD_TYPE.JOYSTICK:
                     yawAxes = gamepad.axes[1];
@@ -57,15 +59,15 @@ export default function init() {
             if (yawAxes) {
                 const zoomFactor = mainManager.getters.getGimbal_zoomAmount();
                 yawAxes > 0
-                    ? mainManager.setters.increaseGimbalHeading(yawAxes * (1 / zoomFactor))
-                    : mainManager.setters.decreaseGimbalHeading(yawAxes * -1 * (1/zoomFactor))
+                    ? mainManager.setters.increaseGimbalHeading(yawAxes * (1 / (zoomFactor/ 1.5)))
+                    : mainManager.setters.decreaseGimbalHeading(yawAxes * -1 * (1/ (zoomFactor/ 1.5)))
             }
 
             if (pitchAxes) {
                 const zoomFactor = mainManager.getters.getGimbal_zoomAmount();
                 pitchAxes > 0
-                    ? mainManager.setters.decreaseGimbalPitch(pitchAxes * 1 * (1 / zoomFactor))
-                    : mainManager.setters.increaseGimbalPitch(pitchAxes * -1 * (1 / zoomFactor))
+                    ? mainManager.setters.decreaseGimbalPitch(pitchAxes * 1 * (1 / (zoomFactor / 1.5)))
+                    : mainManager.setters.increaseGimbalPitch(pitchAxes * -1 * (1 / (zoomFactor / 1.5)))
             }
 
             if (zoomAxes) {
@@ -80,6 +82,10 @@ export default function init() {
 
             if (toggleCameraType) {
                 mainManager.setters.toggleCameraType();
+            }
+
+            if (toggleMovers) {
+                mainManager.setters.toggleMovers();
             }
 
             if(missionSwap) {

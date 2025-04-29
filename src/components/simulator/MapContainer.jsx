@@ -14,7 +14,7 @@ import mainManager, { mainPaths } from "../../state/main/mainManager";
 import { FaMapLocationDot, FaMinimize, FaMinus, FaPlus } from "react-icons/fa6";
 
 // ========================== CONSTANTS ========================== 
-import { CAMERA_TYPE, GAMEPAD_TYPE } from '../../utils/general'
+import { CAMERA_TYPE, GAMEPAD_TYPE, isEarlySecondOfMinute } from '../../utils/general'
 import { setSunlitTime } from "../../utils/map";
 
 export default function MapContainer() {
@@ -33,6 +33,7 @@ export default function MapContainer() {
         mainPaths.selectedMissionIndex,
         mainPaths.sendCot,
         mainPaths.moversActive,
+        mainPaths.manualAltCorrection,
     ]);
     const [record, setRecord] = useState(false);
     const [imageQuality, setImageQuality] = useState(0.3);
@@ -117,6 +118,17 @@ export default function MapContainer() {
             viewer.scene.globe.maximumScreenSpaceError = 1;
 
             mainManager.setters.setMap(viewer);
+
+            viewer.canvas.addEventListener("webglcontextlost", e => {
+                e.preventDefault()
+                console.warn("WEBGL CONTEXT LOST")
+                mainManager.setters.setValidWebGlContext(false);
+            })
+
+            viewer.canvas.addEventListener("webglcontextrestored", () => {
+                console.log("WEB-GL CONTEXT RESTORED")
+                mainManager.setters.setValidWebGlContext(true);
+            })
         }
         exec();
     }, []);
@@ -165,9 +177,10 @@ export default function MapContainer() {
             if (record) {
                 const success = await invoke("start_pipeline");
                 console.log({ success });
-                window._recordingInterval = setInterval(() => { mainManager.methods.sendImage(imageQuality) }, 1000 / window._initConfig?.fps ?? 20);
-                window._hudInterval = setInterval(() => { mainManager.methods.sendHud(imageQuality) }, 1000 / window._initConfig?.hud_fps ?? 5);
-                window._metadataInterval = setInterval(() => { mainManager.methods.sendMetadata() }, (1000 / window._initConfig?.fps ?? 20) / 3); // metadata sent at 3 times the rate of video
+
+                window._recordingInterval = setInterval(() => { !isEarlySecondOfMinute(null, 1) && mainManager.methods.sendImage(imageQuality) }, 1000 / window._initConfig?.fps ?? 20);
+                window._hudInterval = setInterval(() => { !isEarlySecondOfMinute(null, 1) && mainManager.methods.sendHud(imageQuality) }, 1000 / window._initConfig?.hud_fps ?? 5);
+                window._metadataInterval = setInterval(() => { !isEarlySecondOfMinute(null, 1) && mainManager.methods.sendMetadata() }, (1000 / window._initConfig?.fps ?? 20) / 1); // metadata sent at 2 times the rate of video
                 // window._metadataInterval = setInterval(() => { mainManager.methods.sendMetadata() }, 1000 / fps); 
             }
         }
@@ -178,17 +191,32 @@ export default function MapContainer() {
 
     // render vehicles
     useEffect(() => {
-        const mission = mainManager.getters.getSelectedMission();
-        if (state.map && mission) {
-            const position = mainManager.getters.getPosition()
-            setSunlitTime(position.lat, position.lng)
-            mainManager.vehicles.clearAllVehicles();
-            for (let i = 0; i < mission.vehicles.length; i++) {
-                const vehicle = mission.vehicles[i];
-                console.log({ vehicle })
-                mainManager.vehicles.registerVehicleModel(vehicle, i);
+        const exec = async () => {
+            const mission = mainManager.getters.getSelectedMission();
+            if (state.map && mission) {
+                const position = mainManager.getters.getPosition()
+                setSunlitTime(position.lat, position.lng)
+                mainManager.vehicles.clearAllVehicles();
+                for (let i = 0; i < mission.vehicles.length; i++) {
+                    const vehicle = mission.vehicles[i];
+
+                    if(vehicle.convoy_num > 1) {
+                        for(let vNum = 0; vNum < vehicle.convoy_num; vNum++) {
+                            mainManager.vehicles.registerVehicleModel(vehicle, `${i}-${vNum}`, vNum * vehicle.convoy_delay);
+                        }
+                    } else {
+                        mainManager.vehicles.registerVehicleModel(vehicle, `${i}`);
+                    }
+
+                    // for(let x = 0; x < 3; x++) {
+                        // console.log("registering vehicle")
+                        // mainManager.vehicles.registerVehicleModel(vehicle, `${i}-${x}`);
+                        // await new Promise(r => setTimeout(r, 2000))
+                    // }
+                }
             }
         }
+        exec();
     }, [state.selectedMissionIndex, state.map])
 
     useEffect(() => {
@@ -252,6 +280,20 @@ export default function MapContainer() {
                                 onChange={(e) => setImageQuality(parseFloat(e.target.value))}
                             />
                         </label>
+                        <label className="block py-1">
+                            Alt Correction
+                            <input
+                                className="max-w-[4rem] ml-1 mb-1 px-1 rounded-sm"
+                                type="number"
+                                step="1"
+                                max="9999"
+                                value={state.manualAltCorrection}
+                                onChange={(e) => {
+                                    const correction = Number(e.target.value)
+                                    if (!isNaN(correction)) mainManager.setters.setManualAltCorrection(Number(e.target.value))
+                                }}
+                            />
+                        </label>
                         <div className="block border-t border-gray-500">
                             Clouds
                             <label className="grid grid-cols-12">
@@ -310,9 +352,7 @@ export default function MapContainer() {
                         </label>
                         <label>
                             <input type="checkbox" value={state.moversActive} onChange={e => mainManager.setters.setMoversActive(e.target.checked)} />
-                            Activate Movers 
-                            <br />
-                            <em className="block text-left text-sm text-black">udp://{window._initConfig.cot_address}:{window._initConfig.cot_port}</em>
+                            Activate Movers
                         </label>
                         <hr />
                         <button onClick={handleOpenRoutePlanner} className="px-2 mt-1 bg-gray-100 rounded-sm shadow-sm shadow-black cursor-pointer">

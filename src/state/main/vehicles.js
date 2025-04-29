@@ -5,7 +5,7 @@ import { invoke } from '@tauri-apps/api';
 import mainManager from './mainManager';
 
 export default {
-    registerVehicleModel(vehicle, idx) {
+    registerVehicleModel(vehicle, idx, startDelay = 0) {
         const map = this.state.map;
         const initLocation = vehicle?.route?.[0];
         const modelInfo = models[vehicle?.model];
@@ -49,6 +49,7 @@ export default {
         })
         vehicleEntity.vehicleIdx = idx
         vehicleEntity.cotType = vehicle.cot_type;
+        vehicleEntity.startDelay = startDelay
 
         this.vehicles.startVehicleMovement(vehicleEntity, interpolation);
 
@@ -57,18 +58,20 @@ export default {
 
     startVehicleMovement(vehicleEntity, interpolation) {
         if(!vehicleEntity) return;
-        vehicleEntity.routeIdx = 0;
-
+        const startRouteIdx = Math.floor(-30.303 * vehicleEntity.startDelay)
+        vehicleEntity.routeIdx = startRouteIdx;
+        console.log("StartDelay:", startRouteIdx)
         vehicleEntity.movementInterval = setInterval(() => {
             if(!this.getters.getMoversActive()) return; // if movers aren't active, just don't move them. Cot will still send though
-
+            
+            // for convoy movement, delay movers in the convoy
             vehicleEntity.routeIdx += 1
             let nextPoint = interpolation[vehicleEntity.routeIdx]
-            if(!nextPoint) {
-                vehicleEntity.routeIdx = 0
-                nextPoint = interpolation[0]
+            if(!nextPoint && vehicleEntity.routeIdx > 0) {
+                vehicleEntity.routeIdx = startRouteIdx
+                nextPoint = interpolation[startRouteIdx]
             }
-            this.setters.updateVehiclePosition(vehicleEntity.vehicleIdx, nextPoint)
+            if(nextPoint) this.setters.updateVehiclePosition(vehicleEntity.vehicleIdx, nextPoint);
         }, 33)
     },
 
