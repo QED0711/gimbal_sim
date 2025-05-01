@@ -59,15 +59,15 @@ export default function init() {
             if (yawAxes) {
                 const zoomFactor = mainManager.getters.getGimbal_zoomAmount();
                 yawAxes > 0
-                    ? mainManager.setters.increaseGimbalHeading(yawAxes * (1 / (zoomFactor/ 1.5)))
-                    : mainManager.setters.decreaseGimbalHeading(yawAxes * -1 * (1/ (zoomFactor/ 1.5)))
+                    ? mainManager.setters.increaseGimbalHeading(yawAxes * (1 / (zoomFactor/ window._initConfig.gamepad_sensativity)))
+                    : mainManager.setters.decreaseGimbalHeading(yawAxes * -1 * (1/ (zoomFactor/ window._initConfig.gamepad_sensativity)))
             }
 
             if (pitchAxes) {
                 const zoomFactor = mainManager.getters.getGimbal_zoomAmount();
                 pitchAxes > 0
-                    ? mainManager.setters.decreaseGimbalPitch(pitchAxes * 1 * (1 / (zoomFactor / 1.5)))
-                    : mainManager.setters.increaseGimbalPitch(pitchAxes * -1 * (1 / (zoomFactor / 1.5)))
+                    ? mainManager.setters.decreaseGimbalPitch(pitchAxes * 1 * (1 / (zoomFactor / window._initConfig.gamepad_sensativity )))
+                    : mainManager.setters.increaseGimbalPitch(pitchAxes * -1 * (1 / (zoomFactor / window._initConfig.gamepad_sensativity )))
             }
 
             if (zoomAxes) {

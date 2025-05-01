@@ -150,6 +150,7 @@ pub struct Config {
     pub terrain_rendering_threshold: f32,
     pub fps: i32,
     pub gamepad_layout: GamepadLayout,
+    pub gamepad_sensativity: f32,
     pub hud_fps: i32,
     pub overlay_alpha: f32,
     pub ion_access_token: Option<String>, 
@@ -179,6 +180,7 @@ impl Default for Config {
             background_tile_url: None, 
             vector_tile_url: None, 
             gamepad_layout: GamepadLayout::default(),
+            gamepad_sensativity: 1.0,
 
             mission_templates: vec![
                 MissionTemplate::default()

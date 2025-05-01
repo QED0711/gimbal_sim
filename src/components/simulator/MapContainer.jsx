@@ -172,15 +172,15 @@ export default function MapContainer() {
     useEffect(() => {
         const exec = async () => {
             clearInterval(window._recordingInterval);
-            clearInterval(window._hudInterval);
+            // clearInterval(window._hudInterval);
             clearInterval(window._metadataInterval);
             if (record) {
                 const success = await invoke("start_pipeline");
                 console.log({ success });
 
-                window._recordingInterval = setInterval(() => { !isEarlySecondOfMinute(null, 1) && mainManager.methods.sendImage(imageQuality) }, 1000 / window._initConfig?.fps ?? 20);
-                window._hudInterval = setInterval(() => { !isEarlySecondOfMinute(null, 1) && mainManager.methods.sendHud(imageQuality) }, 1000 / window._initConfig?.hud_fps ?? 5);
-                window._metadataInterval = setInterval(() => { !isEarlySecondOfMinute(null, 1) && mainManager.methods.sendMetadata() }, (1000 / window._initConfig?.fps ?? 20) / 1); // metadata sent at 2 times the rate of video
+                window._recordingInterval = setInterval(() => { mainManager.methods.sendImage(imageQuality) }, 1000 / window._initConfig?.fps ?? 20);
+                // window._hudInterval = setInterval(() => { mainManager.methods.sendHud(imageQuality) }, 1000 / window._initConfig?.hud_fps ?? 5);
+                window._metadataInterval = setInterval(() => {mainManager.methods.sendMetadata() }, (1000 / window._initConfig?.fps ?? 20) / 1); // metadata sent at 2 times the rate of video
                 // window._metadataInterval = setInterval(() => { mainManager.methods.sendMetadata() }, 1000 / fps); 
             }
         }
