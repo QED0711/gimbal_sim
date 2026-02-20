@@ -33,6 +33,8 @@ export default function MapContainer() {
         mainPaths.selectedMissionIndex,
         mainPaths.sendCot,
         mainPaths.moversActive,
+        mainPaths.trackVehicle,
+        mainPaths.trackVehicleIndex,
         mainPaths.manualAltCorrection,
     ]);
     const [record, setRecord] = useState(false);
@@ -180,7 +182,7 @@ export default function MapContainer() {
 
                 window._recordingInterval = setInterval(() => { mainManager.methods.sendImage(imageQuality) }, 1000 / window._initConfig?.fps ?? 20);
                 // window._hudInterval = setInterval(() => { mainManager.methods.sendHud(imageQuality) }, 1000 / window._initConfig?.hud_fps ?? 5);
-                window._metadataInterval = setInterval(() => {mainManager.methods.sendMetadata() }, (1000 / window._initConfig?.fps ?? 20) / 1); // metadata sent at 2 times the rate of video
+                window._metadataInterval = setInterval(() => { mainManager.methods.sendMetadata() }, (1000 / window._initConfig?.fps ?? 20) / 1); // metadata sent at 2 times the rate of video
                 // window._metadataInterval = setInterval(() => { mainManager.methods.sendMetadata() }, 1000 / fps); 
             }
         }
@@ -200,19 +202,13 @@ export default function MapContainer() {
                 for (let i = 0; i < mission.vehicles.length; i++) {
                     const vehicle = mission.vehicles[i];
 
-                    if(vehicle.convoy_num > 1) {
-                        for(let vNum = 0; vNum < vehicle.convoy_num; vNum++) {
+                    if (vehicle.convoy_num > 1) {
+                        for (let vNum = 0; vNum < vehicle.convoy_num; vNum++) {
                             mainManager.vehicles.registerVehicleModel(vehicle, `${i}-${vNum}`, vNum * vehicle.convoy_delay);
                         }
                     } else {
                         mainManager.vehicles.registerVehicleModel(vehicle, `${i}`);
                     }
-
-                    // for(let x = 0; x < 3; x++) {
-                        // console.log("registering vehicle")
-                        // mainManager.vehicles.registerVehicleModel(vehicle, `${i}-${x}`);
-                        // await new Promise(r => setTimeout(r, 2000))
-                    // }
                 }
             }
         }
@@ -351,9 +347,18 @@ export default function MapContainer() {
                             <em className="block text-left text-sm text-black">udp://{window._initConfig.cot_address}:{window._initConfig.cot_port}</em>
                         </label>
                         <label>
-                            <input type="checkbox" value={state.moversActive} onChange={e => mainManager.setters.setMoversActive(e.target.checked)} />
+                            <input type="checkbox" checked={state.moversActive} onChange={e => mainManager.setters.setMoversActive(e.target.checked)} />
                             Activate Movers
                         </label>
+                        <label className="block">
+                            <input type="checkbox" checked={state.trackVehicle} onChange={e => mainManager.setters.setTrackVehicle(e.target.checked)} />
+                            Vehicle Track
+                            <input className="ml-1" type="number" min="-1" max="99" value={state.trackVehicleIndex} onChange={e => {
+                                const idx = Number(e.target.value)
+                                !isNaN(idx) ?  mainManager.setters.setTrackVehicleIndex(idx): mainManager.setters.setTrackVehicleIndex(-1)
+                            }} />
+                        </label>
+                        <button className="px-1 bg-gray-100 rounded-sm shadow-sm shadow-black cursor-pointer" onClick={mainManager.vehicles.resetVehicles}>Reset Movers</button>
                         <hr />
                         <button onClick={handleOpenRoutePlanner} className="px-2 mt-1 bg-gray-100 rounded-sm shadow-sm shadow-black cursor-pointer">
                             <FaMapLocationDot size={"2rem"} className="inline-block cursor-pointer " /> Planner

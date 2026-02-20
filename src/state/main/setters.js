@@ -200,6 +200,11 @@ const setters = {
                     gimbal,
                     orbit,
                     manualAltCorrection: 0, // reset manual alt correction on each mission change
+                    vehiclePositions: {},
+                    sendCot: false,
+                    moversActive: false,
+                    trackVehicle: false,
+                    trackVehicleIndex: 0,
                 },
                 [
                     this.paths.selectedMissionIndex,
@@ -208,6 +213,11 @@ const setters = {
                     this.paths.gimbal,
                     this.paths.orbit,
                     this.paths.manualAltCorrection,
+                    this.paths.vehiclePositions,
+                    this.paths.sendCot,
+                    this.paths.moversActive,
+                    this.paths.trackVehicle,
+                    this.paths.trackVehicleIndex,
                 ]
             ]
         }, () => {
@@ -254,6 +264,21 @@ const setters = {
     toggleMovers() {
         this.setState(prevState => {
             return [{moversActive: !prevState.moversActive}, [this.paths.moversActive]];
+        })
+    },
+
+    toggleTrackVehicle() {
+        this.setState(prevState => {
+            const tracking = !prevState.trackVehicle;
+            if(tracking) {
+                return [{trackVehicle: !prevState.trackVehicle}, [this.paths.trackVehicle]];
+            } else {
+                const centerCoord = this.getters.getCoordinateAtPixel({});
+                return [{
+                    trackVehicle: tracking,
+                    gimbal: {...prevState.gimbal, target: centerCoord},
+                }, [this.paths.trackVehicle, this.state.gimbal.target]]
+            }
         })
     }
 

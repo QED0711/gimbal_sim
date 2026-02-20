@@ -3,6 +3,7 @@ import mainManager from "../state/main/mainManager";
 import { GAMEPAD_TYPE } from "./general";
 
 window._missionSwapCount = -1;
+window._trackVehicleCount = -1;
 
 const buttonStates = {}
 const getMomentaryButton = (gamepad, idx, name) => {
@@ -85,7 +86,17 @@ export default function init() {
             }
 
             if (toggleMovers) {
-                mainManager.setters.toggleMovers();
+                clearTimeout(window._trackVehicleTimeout);
+                window._trackVehicleCount += 1 
+                console.log(window._trackVehicleCount)
+                window._trackVehicleTimeout = setTimeout(() => {
+                    if(window._trackVehicleCount === 0) {
+                        mainManager.setters.toggleMovers(); // single click toggles movers on and off
+                    } else if(window._trackVehicleCount > 0) {
+                        mainManager.setters.toggleTrackVehicle(); // double click toggles vehicle tracking
+                    }
+                    window._trackVehicleCount = -1;
+                }, 500)
             }
 
             if(missionSwap) {

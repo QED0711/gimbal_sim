@@ -128,6 +128,20 @@ const getters = {
     getVehiclePosition(idx) {
         return this.state.vehiclePositions[idx] ?? null
     },
+
+    getTrackedVehiclePosition() {
+        let idx = this.state.trackVehicleIndex;
+        if(!(idx in this.state.vehiclePositions)) {
+            for(let i = 0; i < 100; i++) {
+                if(`${i}-${idx}` in this.state.vehiclePositions) {
+                    idx = `${i}-${idx}`;
+                    break
+                }
+            }
+        }
+        return this.getters.getVehiclePosition(idx);
+    }
 }
+
 
 export default getters;

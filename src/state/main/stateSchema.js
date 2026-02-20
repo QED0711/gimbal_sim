@@ -67,6 +67,9 @@ const stateSchema = {
     moversActive: false,
 
     manualAltCorrection: 0,
+
+    trackVehicle: false,
+    trackVehicleIndex: 0,
 }
 
 export default stateSchema;

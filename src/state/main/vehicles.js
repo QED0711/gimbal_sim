@@ -9,7 +9,6 @@ export default {
         const map = this.state.map;
         const initLocation = vehicle?.route?.[0];
         const modelInfo = models[vehicle?.model];
-        // console.log({map, initLocation, modelInfo})
 
         if(!map || !initLocation || !modelInfo) return;
 
@@ -50,17 +49,18 @@ export default {
         vehicleEntity.vehicleIdx = idx
         vehicleEntity.cotType = vehicle.cot_type;
         vehicleEntity.startDelay = startDelay
+        vehicleEntity.startRouteIdx = Math.floor(-30.303 * startDelay)
+        vehicleEntity.routeIdx = vehicleEntity.startRouteIdx;
 
         this.vehicles.startVehicleMovement(vehicleEntity, interpolation);
-
         return vehicleEntity
     },
 
     startVehicleMovement(vehicleEntity, interpolation) {
         if(!vehicleEntity) return;
-        const startRouteIdx = Math.floor(-30.303 * vehicleEntity.startDelay)
-        vehicleEntity.routeIdx = startRouteIdx;
-        console.log("StartDelay:", startRouteIdx)
+        // const startRouteIdx = Math.floor(-30.303 * vehicleEntity.startDelay)
+        // vehicleEntity.routeIdx = startRouteIdx;
+
         vehicleEntity.movementInterval = setInterval(() => {
             if(!this.getters.getMoversActive()) return; // if movers aren't active, just don't move them. Cot will still send though
             
@@ -68,11 +68,18 @@ export default {
             vehicleEntity.routeIdx += 1
             let nextPoint = interpolation[vehicleEntity.routeIdx]
             if(!nextPoint && vehicleEntity.routeIdx > 0) {
-                vehicleEntity.routeIdx = startRouteIdx
+                vehicleEntity.routeIdx = vehicleEntity.startRouteIdx
                 nextPoint = interpolation[startRouteIdx]
             }
             if(nextPoint) this.setters.updateVehiclePosition(vehicleEntity.vehicleIdx, nextPoint);
         }, 33)
+    },
+
+    resetVehicles() {
+        const vehicleEntities = this.getters.getVehicles();
+        for(const ve of vehicleEntities) {
+            ve.routeIdx = ve.startRouteIdx;
+        }
     },
 
     clearAllVehicles() {

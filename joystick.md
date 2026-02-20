@@ -8,16 +8,16 @@ required terminal dependencies
 `lsbusb`
 `xboxdrv`
 `evtest`
-`jstest`
+`jstest` - installed as `joystick`
 
 ```
-sudo apt install -y xboxdrv evtest jstest
+sudo apt install -y xboxdrv evtest joystick
 ```
 
 1. connect the joystick via USB and run the following to find the input device:
 
 ```
-lsbusb
+lsusb
 ```
 
 You should see something like: 
@@ -25,6 +25,8 @@ You should see something like:
 ```
 usb-Turtle_Beach_VelocityOne_Flightstick_75230861409294@A-event-joystick
 ```
+
+You'll likely see two entries per controller. You want the one with *event* in its name.
 
 Copy that output and save for a future step. 
 

@@ -36,11 +36,25 @@ const methods = {
 
         await this.setters.setPosition({ lat, lng, alt });
 
-        if (this.state.gimbal.isLocked && this.state.gimbal.target !== null) {
-            const heading = calcHeading({ lat, lng, alt }, this.state.gimbal.target);
-            const pitch = calcPitch({ lat, lng, alt }, this.state.gimbal.target);
+        // handle gimbal lock or vehicle track
+        if (this.state.gimbal.isLocked && (this.state.gimbal.target !== null || this.state.trackVehicle)) {
 
-            this.setters.setGimbalHeadingPitch(heading, pitch);
+            let heading, pitch;
+
+            if(this.state.trackVehicle) {
+                const vehiclePosition = this.getters.getTrackedVehiclePosition();
+                if(vehiclePosition) {
+                    heading = calcHeading({lat, lng, alt}, vehiclePosition);
+                    pitch = calcPitch({lat, lng, alt}, vehiclePosition);
+                }
+            } else {
+                heading = calcHeading({ lat, lng, alt }, this.state.gimbal.target);
+                pitch = calcPitch({ lat, lng, alt }, this.state.gimbal.target);
+            }
+
+            if(heading !== undefined && pitch !== undefined) {
+                this.setters.setGimbalHeadingPitch(heading, pitch);
+            }
         }
 
     },
@@ -54,7 +68,7 @@ const methods = {
         const curFov = camera.frustum.fov;
         const curFovy = camera.frustum.fovy;
 
-        let heading, pitch, roll;
+        let heading, pitch; 
         heading = Cesium.Math.toRadians(gimbal.heading);
         pitch = Cesium.Math.toRadians(gimbal.pitch);
 
