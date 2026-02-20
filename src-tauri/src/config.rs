@@ -1,7 +1,7 @@
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 use serde_yaml;
-use std::{fs::{File, OpenOptions}, io::{self, Write}, path::Path};
+use std::{fs::{File, OpenOptions}, io::{self, Write}, path::Path, sync::Arc};
 use tauri::State;
 use crate::utils::AppSharedState;
 
@@ -9,8 +9,11 @@ use crate::utils::AppSharedState;
 #[command(author, version, about, long_about = None)]
 pub struct Args {
     /// absolute path to config file
-    #[arg(short, long, default_value = "./gimbal.conf")]
-    file_path: String,
+    #[arg(short, long, default_value = "/opt/gimbal.conf")]
+    pub file_path: String,
+    
+    #[arg(short, long, default_value="true")]
+    pub gst_debug: bool
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -26,6 +29,7 @@ impl Default for Location {
         Location { lat: 0.0, lng: 0.0, alt: Some(0.0) }
     }
 }
+
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(default)]
 pub struct Orientation {
@@ -41,12 +45,58 @@ impl Default for Orientation {
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[serde(default)]
+pub struct Orbit {
+    #[serde(rename = "type")]
+    orbit_type: String,
+    rate: f32,
+}
+
+impl Default for Orbit {
+    fn default() -> Self {
+        Orbit { orbit_type: "no-orbit".to_string(), rate: 1.0 }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(default)]
+pub struct Vehicle {
+    model: String,
+    name: String,
+    cot_type: String,
+    convoy_num: i8,
+    convoy_delay: i8,
+    route: Vec<Location>,
+    speed: i32,
+    broadcast_cot: bool
+}
+
+impl Default for Vehicle {
+    fn default() -> Self {
+        Vehicle {
+            model: "whiteCar".to_string(), 
+            name: "".to_string(),
+            cot_type: "a-u-G".to_string(), // defaults to atom-unknown-ground
+            convoy_num: 1,
+            convoy_delay: 0,
+            route: vec![], 
+            speed: 0, 
+            broadcast_cot: false
+        }
+    }
+}
+
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(default)]
 pub struct MissionTemplate {
     name: String,
     aircraft_location: Location,
     orientation: Orientation,
     target_location: Option<Location>,
-    target_lock: bool
+    target_lock: bool,
+    alt_correction: f32,
+    orbit: Orbit, 
+    vehicles: Vec<Vehicle>,
 }
 
 impl Default for MissionTemplate {
@@ -56,7 +106,36 @@ impl Default for MissionTemplate {
             aircraft_location: Location::default(),
             orientation: Orientation::default(),
             target_location: None,
-            target_lock: false
+            target_lock: false,
+            alt_correction: 0.0,
+            orbit: Orbit::default(),
+            vehicles: vec![],
+        }
+    }
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(default)]
+pub struct GamepadLayout {
+    yaw_axis: i8,
+    pitch_axis: i8,
+    zoom_axis: i8,
+    lock_button: i8,
+    camera_type_button: i8,
+    mission_swap_button: i8,
+    toggle_movers: i8,
+}
+
+impl Default for GamepadLayout {
+    fn default() -> Self {
+        GamepadLayout{
+            yaw_axis: -1,
+            pitch_axis: -1, 
+            zoom_axis: -1,
+            lock_button: -1,
+            camera_type_button: -1,
+            mission_swap_button: -1,
+            toggle_movers: -1,
         }
     }
 }
@@ -66,18 +145,21 @@ impl Default for MissionTemplate {
 pub struct Config {
     pub stream_address: String,
     pub stream_port: String, 
+    pub cot_address: String,
+    pub cot_port: String, 
+    pub terrain_rendering_threshold: f32,
+    pub fps: i32,
+    pub gamepad_layout: GamepadLayout,
+    pub gamepad_sensativity: f32,
+    pub hud_fps: i32,
+    pub overlay_alpha: f32,
     pub ion_access_token: Option<String>, 
+    pub terrain_url: Option<String>,
+    pub background_tile_url: Option<String>,
+    pub vector_tile_url: Option<String>,
+    
 
     pub mission_templates: Vec<MissionTemplate>,
-
-    // pub start_lat: f64,
-    // pub start_lng: f64,
-    // pub start_alt: u64,
-    // pub start_speed: f64,
-    // pub start_heading: u16,
-    // pub target_lat: f64,
-    // pub target_lng: f64,
-    // pub target_lock: bool,
 }
 
 
@@ -87,22 +169,22 @@ impl Default for Config {
         Config {
             stream_address: "127.0.0.1".to_string(),
             stream_port: "15000".to_string(),
+            cot_address: "239.1.3.2".to_string(),
+            cot_port: "6969".to_string(),
+            terrain_rendering_threshold: 2.0,
+            fps: 30,
+            hud_fps: 5,
+            overlay_alpha: 0.5,
+            terrain_url: None,
             ion_access_token: None,
+            background_tile_url: None, 
+            vector_tile_url: None, 
+            gamepad_layout: GamepadLayout::default(),
+            gamepad_sensativity: 1.0,
 
             mission_templates: vec![
                 MissionTemplate::default()
             ],
-
-            // start_lat: 36.356553,
-            // start_lng: -112.306541,
-            // start_alt: 10000, // meters
-            // start_speed: 75.0, // meters per second
-            // start_heading: 0,
-
-            // target_lat: 0.0,
-            // target_lng: 0.0,
-            // target_lock: false,
-
         }
     }
 }
@@ -128,6 +210,6 @@ pub fn parse_config() -> Config {
 }
 
 #[tauri::command]
-pub fn retrieve_config(state: State<AppSharedState>) -> Config {
-    return state.config.clone()
+pub fn retrieve_config(state: State<Arc<AppSharedState>>) -> Config {
+    state.inner().config.clone()
 }

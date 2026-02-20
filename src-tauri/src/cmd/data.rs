@@ -1,14 +1,36 @@
 use crate::klv::MISB601;
 
 use super::super::utils;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH, Instant, Duration};
 use std::fs::OpenOptions;
 use std::io::{self, Write};
-use std::env;
-use rand::Rng;
+use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
+use once_cell::sync::Lazy;
+
 use tauri::State;
 use gstreamer as gst;
 use serde::Deserialize;
+
+
+
+static START_TIME: Lazy<Mutex<Instant>> = Lazy::new(|| Mutex::new(Instant::now()));
+static LAST_CALL: Lazy<Mutex<Option<Instant>>> = Lazy::new(|| Mutex::new(None));
+
+fn print_elapsed_time() {
+    let mut last_call = LAST_CALL.lock().unwrap(); // Lock the mutex to access the last call time
+    let now = Instant::now();
+
+    match *last_call {
+        Some(last_instant) => {
+            let elapsed = now.duration_since(last_instant);
+            println!("Time since last call: {:.2?}", elapsed);
+        }
+        None => println!("First call"),
+    }
+
+    *last_call = Some(now); // Update the last call time to now
+}
 
 
 
@@ -46,28 +68,37 @@ pub struct Metadata {
 
 
 #[tauri::command]
-pub fn send_video_packet(state: State<utils::AppSharedState>, image_arr: Vec<u8>) {
-
-    let video_appsrc = state.video_appsrc.lock().unwrap();
+pub fn send_video_packet(state: State<Arc<utils::AppSharedState>>, image_arr: Vec<u8>) {
     
-    let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create image gst buffer");
-    timestamp_buffer(&mut image_buf, &image_arr);
+    let mut cur_image = state.cur_image.lock().unwrap();
+    *cur_image = Some(image_arr);
 
-    video_appsrc.push_buffer(image_buf).expect("Failed to push to image buffer");
+    // print_elapsed_time();
+    // println!("timestamp: {:?}", image_buf);
+
+    // let video_appsrc = state.video_appsrc.lock().unwrap();
+    // let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create image gst buffer");
+    // timestamp_buffer(&mut image_buf, &image_arr);
+    // video_appsrc.push_buffer(image_buf).expect("Failed to push to image buffer");
 }
 
 #[tauri::command]
-pub fn send_metadata_packet(state: State<utils::AppSharedState>, metadata: Metadata ) {
+pub fn send_hud_packet(state: State<Arc<utils::AppSharedState>>, image_arr: Vec<u8>) {
+    let mut cur_overlay = state.cur_overlay.lock().unwrap();
+    *cur_overlay = Some(image_arr);
+
+    // let hud_appsrc = state.hud_appsrc.lock().unwrap();
+    // let mut image_buf = gst::Buffer::with_size(image_arr.len()).expect("Failed to create hud gst buffer");
+    // timestamp_buffer(&mut image_buf, &image_arr);
+    // hud_appsrc.push_buffer(image_buf).expect("Failed to push to hud buffer");
+}
+
+#[tauri::command]
+pub fn send_metadata_packet(state: State<Arc<utils::AppSharedState>>, metadata: Metadata ) {
     let klv_metadata = MISB601::Klv::from(metadata);
     let klv = klv_metadata.encode_to_klv();
 
-    // let file_path = env::current_dir().unwrap().into_os_string().into_string().unwrap();
-    // let file_path  = format!("{}/../python/klv_raw.bin", file_path);
-    // append_to_file(&file_path, &klv);
-    // println!("{:?}", klv);
-    // panic!("Exiting early");
-
-    let klv_appsrc = state.klv_appsrc.lock().unwrap();
+    let klv_appsrc = state.inner().klv_appsrc.lock().unwrap();
 
     let mut klv_buf = gst::Buffer::with_size(klv.len()).expect("Failed to create klv gst buffer");
     timestamp_buffer(&mut klv_buf, &klv);
@@ -78,19 +109,34 @@ pub fn send_metadata_packet(state: State<utils::AppSharedState>, metadata: Metad
 
 
 // #[allow(dead_code)]
-fn timestamp_buffer(buffer: &mut gst::Buffer, data: &Vec<u8>){
+pub fn timestamp_buffer(buffer: &mut gst::Buffer, data: &Vec<u8>){
+
+    let start_time = START_TIME.lock().unwrap();
+    let elapsed = start_time.elapsed();
+
+    // Convert elapsed time to GST ClockTime
+    let pts = gst::ClockTime::from_nseconds(elapsed.as_nanos() as u64);
+
+    // Set PTS (and optionally DTS) for the buffer
     let buffer = buffer.get_mut().unwrap();
-    let _ = buffer.copy_from_slice(0, data);
-
-    let now = SystemTime::now().duration_since(UNIX_EPOCH)
-        .expect("Time went backwards");
-
-    let pts = gst::ClockTime::from_mseconds(now.as_millis() as u64);
-
     buffer.set_pts(pts);
     buffer.set_dts(pts);
-    buffer.set_duration(pts);
-    buffer.set_offset(now.as_millis() as u64);
+
+    let _ = buffer.copy_from_slice(0, data);
+
+    // OLD LOGIC
+    // let buffer = buffer.get_mut().unwrap();
+    // let _ = buffer.copy_from_slice(0, data);
+
+    // let now = SystemTime::now().duration_since(UNIX_EPOCH)
+    //     .expect("Time went backwards");
+
+    // let pts = gst::ClockTime::from_mseconds(now.as_millis() as u64);
+
+    // buffer.set_pts(pts);
+    // buffer.set_dts(pts);
+    // buffer.set_duration(pts);
+    // buffer.set_offset(now.as_millis() as u64);
 
 }
 

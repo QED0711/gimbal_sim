@@ -2,46 +2,12 @@ import { invoke } from "@tauri-apps/api";
 import * as Cesium from "cesium";
 import { calcHeading, calcPitch } from "../../utils/map";
 
+import Cloud1 from '../../assets/clouds_1.png'
+import Cloud2 from '../../assets/clouds_2.png'
+import Cloud3 from '../../assets/clouds_3.png'
+
 let callCount = 0;
 let lastLogTime = Date.now();
-
-function logCallRate() {
-    const now = Date.now();
-    callCount++;
-
-    if (now - lastLogTime >= 1000) {
-        // Check if one second has passed
-        console.log(`Function called ${callCount} times in the last second.`);
-        callCount = 0; // Reset the counter
-        lastLogTime = now; // Update the last log time
-    }
-}
-
-function calculateSpeed(deltaTimeMs, prevLat, prevLng, curLat, curLng) {
-    // Check if Cesium is loaded
-    if (typeof Cesium === "undefined") {
-        console.error("Cesium is not loaded");
-        return;
-    }
-
-    // Convert deltaTime from milliseconds to seconds
-    const deltaTimeSeconds = deltaTimeMs / 1000;
-
-    // Create Cesium Cartographic objects for previous and current positions
-    const prevPosition = Cesium.Cartographic.fromDegrees(prevLng, prevLat);
-    const curPosition = Cesium.Cartographic.fromDegrees(curLng, curLat);
-
-    // Calculate the surface distance in meters
-    const surfaceDistance = Cesium.Cartesian3.distance(
-        Cesium.Ellipsoid.WGS84.cartographicToCartesian(prevPosition),
-        Cesium.Ellipsoid.WGS84.cartographicToCartesian(curPosition)
-    );
-
-    // Calculate speed in meters per second
-    const speed = surfaceDistance / deltaTimeSeconds;
-
-    return speed;
-}
 
 const methods = {
     async updateAircraftPosition() {
@@ -61,7 +27,7 @@ const methods = {
         const earthRadius = Cesium.Ellipsoid.WGS84.maximumRadius;
         const deltaLatitude = Cesium.Math.toDegrees((horizontalDistance / earthRadius) * Math.cos(headingRadians));
         const deltaLongitude = Cesium.Math.toDegrees(
-            (horizontalDistance / (earthRadius * Math.cos(currentPosition.lat))) * Math.sin(headingRadians)
+            (horizontalDistance / (earthRadius * Math.cos(Cesium.Math.toRadians(currentPosition.lat)))) * Math.sin(headingRadians)
         );
 
         const lat = currentPosition.lat + deltaLatitude,
@@ -70,72 +36,164 @@ const methods = {
 
         await this.setters.setPosition({ lat, lng, alt });
 
-        if (this.state.gimbal.isLocked && this.state.gimbal.target !== null) {
-                const heading = calcHeading({ lat, lng, alt }, this.state.gimbal.target);
-                const pitch = calcPitch({ lat, lng, alt }, this.state.gimbal.target);
-    
+        // handle gimbal lock or vehicle track
+        if (this.state.gimbal.isLocked && (this.state.gimbal.target !== null || this.state.trackVehicle)) {
+
+            let heading, pitch;
+
+            if(this.state.trackVehicle) {
+                const vehiclePosition = this.getters.getTrackedVehiclePosition();
+                if(vehiclePosition) {
+                    heading = calcHeading({lat, lng, alt}, vehiclePosition);
+                    pitch = calcPitch({lat, lng, alt}, vehiclePosition);
+                }
+            } else {
+                heading = calcHeading({ lat, lng, alt }, this.state.gimbal.target);
+                pitch = calcPitch({ lat, lng, alt }, this.state.gimbal.target);
+            }
+
+            if(heading !== undefined && pitch !== undefined) {
                 this.setters.setGimbalHeadingPitch(heading, pitch);
+            }
         }
 
     },
 
     updateCamera() {
-        if (!!this.state.map) {
-            const gimbal = this.state.gimbal;
-            const camera = this.state.map.camera;
+        if (!this.state.map) return;
 
-            const curFov = camera.frustum.fov;
-            const curFovy = camera.frustum.fovy;
+        const gimbal = this.state.gimbal;
+        const camera = this.state.map.camera;
 
-            let heading, pitch;
-            heading = Cesium.Math.toRadians(gimbal.heading);
-            pitch = Cesium.Math.toRadians(gimbal.pitch);
+        const curFov = camera.frustum.fov;
+        const curFovy = camera.frustum.fovy;
 
-            camera.lookAt(
-                this.state.entity.position.getValue(),
-                new Cesium.HeadingPitchRange(heading, pitch, gimbal.range)
-            );
-            camera.frustum.fov = Cesium.Math.toRadians(60) / gimbal.zoomAmount;
+        let heading, pitch; 
+        heading = Cesium.Math.toRadians(gimbal.heading);
+        pitch = Cesium.Math.toRadians(gimbal.pitch);
 
-            // camera.zoomIn(gimbal.zoomAmount);
-
-            // camera.frustum.fov /= 2.0;
-
-            // let newFov = curFov / (gimbal.zoomAmount || 1.0);
-            // newFov = Cesium.Math.clamp(newFov, 0, Cesium.Math.PI);
-
-            // let newFovy = curFovy / (gimbal.zoomAmount || 1.0);
-            // newFovy = Cesium.Math.clamp(newFov, 0, Cesium.Math.PI);
-
-            // window._fov = {
-            //     hfov: Cesium.Math.toDegrees(newFov),
-            //     vfov: Cesium.Math.toDegrees(newFovy),
-            // }
-
-        }
+        camera.lookAt(
+            this.state.entity.position.getValue(),
+            new Cesium.HeadingPitchRange(heading, pitch, gimbal.range)
+        );
+        camera.frustum.fov = Cesium.Math.toRadians(60) / gimbal.zoomAmount;
     },
 
     sendImage(imageQuality) {
         if (!this.state.map) return;
+        const canvas = this.state.map.canvas
+        if (canvas === null || canvas.width === 0 || canvas.height === 0) return;
 
-        this.state.map.canvas.toBlob(blob => {
-            const reader = new FileReader();
+        const validWebGlContext = this.getters.getValidWebGlContext();
+        if(!validWebGlContext) {
+            console.warn("Skipping frame fro bad webgl context");
+            return;
+        }
+        
 
-            reader.onload = async function () {
-                const arrayBuffer = reader.result;
-                const data = Array.from(new Uint8Array(arrayBuffer));
-                await invoke("send_video_packet", { imageArr: data });
-            }
-            reader.readAsArrayBuffer(blob);
-        }, "image/jpeg", imageQuality);
+
+        try {
+            canvas.toBlob(blob => {
+                if (!blob) {
+                    console.warn("toBlob returned null. Possibly due to lost WebGL context.");
+                    return;
+                }
+
+                const reader = new FileReader();
+
+                reader.onload = async function () {
+                    try {
+                        const arrayBuffer = reader.result;
+                        const data = Array.from(new Uint8Array(arrayBuffer));
+                        await invoke("send_video_packet", { imageArr: data });
+                    } catch (err) {
+                        console.error("SEND_IMAGE: ", err)
+                    }
+                }
+
+                reader.onerror = function (e) {
+                    console.error("Frame Read Error: ", err);
+                }
+
+                reader.readAsArrayBuffer(blob);
+            }, "image/jpeg", imageQuality);
+        } catch (err) {
+            console.error("failed during toBlob: ", err)
+        }
+    },
+
+    sendHud(imageQuality) {
+        if (this.state.includeHud) {
+            this.state.hud.toBlob(blob => {
+                const reader = new FileReader();
+
+                reader.onload = async function () {
+                    const arrayBuffer = reader.result;
+                    const data = Array.from(new Uint8Array(arrayBuffer));
+                    await invoke("send_hud_packet", { imageArr: data });
+                }
+                reader.readAsArrayBuffer(blob);
+            }, "image/jpeg", imageQuality);
+        }
     },
 
     async sendMetadata() {
         if (!this.state.map) return;
 
-        const metadata = this.getters.getMetadata();
-        await invoke("send_metadata_packet", { metadata })
+        try {
+            const metadata = this.getters.getMetadata();
+            if (!metadata) return;
+            await invoke("send_metadata_packet", { metadata })
+        } catch (err) {
+            console.error("METADATA SEND: ", err)
+        }
+    },
+
+    updateAtmosphereOcclusion() {
+        const entity = this.state.entity;
+        if (!entity) return;
+
+        const atmosphereLevel = this.state.atmosphere ?? 0.0;
+        entity.ellipsoid.material = atmosphereLevel === 1
+            ? Cesium.Color.WHITE.withAlpha(0.9999)
+            : Cesium.Color.WHITE.withAlpha(atmosphereLevel)
+    },
+
+    addCloudRect(cloudImg, alpha, height, map, position) {
+        return map.entities.add({
+            rectangle: {
+                coordinates: Cesium.Rectangle.fromDegrees(position.lng - 2, position.lat - 2, position.lng + 2, position.lat + 2),
+                material: new Cesium.ImageMaterialProperty({
+                    image: cloudImg,
+                    transparent: true,
+                    color: Cesium.Color.WHITE.withAlpha(alpha ?? 0.0)
+                }),
+                height,
+            }
+        })
+
+    },
+
+    updateCloudLayers() {
+        const map = this.state.map;
+        const position = this.state.position;
+        if (!map || !position) return;
+
+        const clouds = this.state.clouds
+
+        for (let cloud of Object.values(this.state.clouds)) {
+            if (!cloud?.cloud) continue;
+            map.entities.remove(cloud.cloud)
+        }
+
+        clouds.low.cloud = this.methods.addCloudRect(Cloud1, clouds.low.alpha, clouds.low.height, map, position) // 1000ft
+        clouds.medium.cloud = this.methods.addCloudRect(Cloud2, clouds.medium.alpha, clouds.medium.height, map, position) // 1000ft
+        clouds.high.cloud = this.methods.addCloudRect(Cloud3, clouds.high.alpha, clouds.high.height, map, position) // 1000ft
+
+        this.setters.setClouds(clouds)
+
     }
+
 };
 
 export default methods;

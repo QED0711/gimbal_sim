@@ -1,17 +1,30 @@
+import { CAMERA_TYPE, GAMEPAD_TYPE } from "../../utils/general";
+
 const initConfig = window._initConfig
 
 const stateSchema = {
 
     imageDimensions: { width: 1280, height: 720 },
     map: null,
+    validWebGlContext: true,
+    imageryLayer: null,
+    cameraType: CAMERA_TYPE.EO,
+    hud: null,
+    includeHud: false,
     isPaused: false,
+    atmosphere: 0.0,
+    clouds: {
+        low: {cloud: null, alpha: 0.0, height: 304.8},
+        medium: {cloud: null, alpha: 0.0, height: 1524},
+        high: {cloud: null, alpha: 0.0, height: 6096},
+    },
 
     missions: initConfig.mission_templates ?? [],
     selectedMissionIndex: 0,
 
     position: {
-        lng: initConfig.mission_templates?.[0]?.aircraft_location?.lng ?? 0.0, 
-        lat: initConfig.mission_templates?.[0]?.aircraft_location?.lat ?? 0.0, 
+        lng: initConfig.mission_templates?.[0]?.aircraft_location?.lng ?? -77.021561, 
+        lat: initConfig.mission_templates?.[0]?.aircraft_location?.lat ?? 38.897155, 
         alt: initConfig.mission_templates?.[0]?.aircraft_location?.alt ?? 10000, 
         // lat: initConfig.start_lat ?? 0.0, 
         // alt: initConfig.start_alt ?? 10000
@@ -39,8 +52,24 @@ const stateSchema = {
             alt: initConfig.mission_templates?.[0]?.target_location?.alt ?? 0.0, 
             // alt: 0.00 
         }
-
     },
+
+    orbit: {
+        type: initConfig.mission_templates?.[0]?.orbit?.type ?? "no-orbit",
+        rate: initConfig.mission_templates?.[0]?.orbit?.rate * 1000 ?? 1000,
+    },
+
+    gamepadType: GAMEPAD_TYPE.CONTROLLER,
+    gamepad: null,
+
+    vehiclePositions: {},
+    sendCot: false,
+    moversActive: false,
+
+    manualAltCorrection: 0,
+
+    trackVehicle: false,
+    trackVehicleIndex: 0,
 }
 
 export default stateSchema;

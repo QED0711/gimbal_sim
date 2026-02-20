@@ -4,12 +4,25 @@ import "./styles.css";
 import { invoke } from "@tauri-apps/api";
 
 (async () => {
+
     // retrieve config before requiring any other part of the react/dom tree so we can load the config state into the window before initializing local state
-    const initConfig = await invoke("retrieve_config") 
+    const initConfig = await invoke("retrieve_config")
     console.log(initConfig)
     window._initConfig = initConfig;
+    window.developmentMode = import.meta.env.MODE === "development"
 
-    const {default: App} = await import("./App");
+    switch (window.location.pathname) {
+        case "/":
+            window.name = "main";
+            break;
+        case "/route-planner":
+            window.name = "route-planner";
+            break;
+    }
+
+    console.log(window.location);
+
+    const { default: App } = await import("./App");
 
     ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 })();

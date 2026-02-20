@@ -5,6 +5,7 @@ import stateSchema from './stateSchema'
 import getters from './getters'
 import setters from './setters'
 import methods from './methods'
+import vehicles from './vehicles';
 
 
 const mainManager = new Spiccato(stateSchema, {id: "main", enableWriteProtection: false})
@@ -12,8 +13,14 @@ const mainManager = new Spiccato(stateSchema, {id: "main", enableWriteProtection
 // mainManager.connectToLocalStorage({ 
 //     persistKey: "main",
 //     providerID: "main",
-//     initializeFromLocalStorage: true,
-//     clearStorageOnUnload: false,
+//     initializeFromLocalStorage: false,
+//     clearStorageOnUnload: true,
+//     privateState: [
+//         mainManager.paths.map,
+//         mainManager.paths.hud,
+//     ],
+//     providerWindow: "main",
+//     subscriberWindows: ["route-planner"]
 // })
 
 mainManager.init(); // IMPORTANT: This must be called prior to addCustomGetters and addCustomSetters
@@ -21,6 +28,7 @@ mainManager.init(); // IMPORTANT: This must be called prior to addCustomGetters 
 mainManager.addCustomGetters(getters)
 mainManager.addCustomSetters(setters)
 mainManager.addCustomMethods(methods)
+mainManager.addNamespacedMethods({vehicles})
 
 window._mainManager = mainManager
 

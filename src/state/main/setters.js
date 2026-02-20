@@ -1,5 +1,8 @@
 import * as Cesium from 'cesium'
-import { mainPaths } from "./mainManager";
+import mainManager, { mainPaths } from "./mainManager";
+import {emit} from '@tauri-apps/api/event'
+import { CAMERA_TYPE } from '../../utils/general';
+import { setSunlitTime } from '../../utils/map';
 
 const setters = {
     togglePause() {
@@ -8,11 +11,11 @@ const setters = {
         });
     },
 
-    toggleGimbalLock(){
+    async toggleGimbalLock(){
+        const centerCoord = this.getters.getCoordinateAtPixel({});
         this.setState(prevState => {
             const isLocked = !prevState.gimbal.isLocked;
             if(isLocked) {
-                const centerCoord = this.getters.getCoordinateAtPixel({});
                 return [
                     {gimbal: {...prevState.gimbal, isLocked, target: centerCoord}},
                     [this.paths.gimbal.isLocked, this.paths.gimbal.target]
@@ -26,9 +29,9 @@ const setters = {
         })
     },
 
-    setTargetToCenterScreen(){
-        this.setState(prevState => {
-            const centerCoord = this.getters.getCoordinateAtPixel({});
+    async setTargetToCenterScreen(){
+        const centerCoord = this.getters.getCoordinateAtPixel({});
+        this.setState( prevState => {
             return [
                 {gimbal: {...prevState.gimbal, target: centerCoord}},
                 [this.paths.gimbal.target]
@@ -185,22 +188,99 @@ const setters = {
                 },
                 isLocked: !!mission.target_lock
             }
+            const orbit = mission.orbit;
+            orbit.rate *= 1000 // adjust for rate in ms
+            setSunlitTime(position.lat, position.lng);
+
             return [
                 {
                     selectedMissionIndex: missionIdx,
                     position,
                     aircraft,
                     gimbal,
+                    orbit,
+                    manualAltCorrection: 0, // reset manual alt correction on each mission change
+                    vehiclePositions: {},
+                    sendCot: false,
+                    moversActive: false,
+                    trackVehicle: false,
+                    trackVehicleIndex: 0,
                 },
                 [
                     this.paths.selectedMissionIndex,
                     this.paths.position,
                     this.paths.aircraft,
                     this.paths.gimbal,
+                    this.paths.orbit,
+                    this.paths.manualAltCorrection,
+                    this.paths.vehiclePositions,
+                    this.paths.sendCot,
+                    this.paths.moversActive,
+                    this.paths.trackVehicle,
+                    this.paths.trackVehicleIndex,
                 ]
+            ]
+        }, () => {
+            mainManager.methods.updateCloudLayers()
+        })
+    },
+
+    toggleCameraType() {
+        this.setState(prevState => {
+            const cameraType = prevState.cameraType === CAMERA_TYPE.EO
+                ? CAMERA_TYPE.IR
+                : CAMERA_TYPE.EO
+            return [
+                {cameraType},
+                [this.paths.cameraType]
             ]
         })
     },
+
+    changeCloudLevelOpacity(level, alpha){
+        this.setState(prevState => {
+            const cloudLevel = prevState.clouds[level];
+            cloudLevel.alpha = alpha;
+            if(cloudLevel.cloud) {
+                cloudLevel.cloud.rectangle.material.color = Cesium.Color.WHITE.withAlpha(alpha);
+            }
+            return [
+                {
+                    clouds: {...prevState.clouds, [level]: cloudLevel}
+                }, 
+                [this.paths.clouds]
+            ]
+        })
+    },
+
+    updateVehiclePosition(idx, position) {
+        this.setState(prevState => {
+            const vehiclePositions = prevState.vehiclePositions;
+            vehiclePositions[idx] = position
+            return [{vehiclePositions}, []] // this intentionally doesn't say anything was changed to avoid a state that might trigger re-renders 
+        })
+    },
+
+    toggleMovers() {
+        this.setState(prevState => {
+            return [{moversActive: !prevState.moversActive}, [this.paths.moversActive]];
+        })
+    },
+
+    toggleTrackVehicle() {
+        this.setState(prevState => {
+            const tracking = !prevState.trackVehicle;
+            if(tracking) {
+                return [{trackVehicle: !prevState.trackVehicle}, [this.paths.trackVehicle]];
+            } else {
+                const centerCoord = this.getters.getCoordinateAtPixel({});
+                return [{
+                    trackVehicle: tracking,
+                    gimbal: {...prevState.gimbal, target: centerCoord},
+                }, [this.paths.trackVehicle, this.state.gimbal.target]]
+            }
+        })
+    }
 
 };
 

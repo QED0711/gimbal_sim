@@ -12,6 +12,9 @@
   "tauri": {
     "allowlist": {
       "all": false,
+      "window": {
+        "all": true
+      },
       "shell": {
         "all": false,
         "open": true
@@ -34,9 +37,10 @@
     },
     "windows": [
       {
+        "label": "main",
+        "title": "Simulator",
         "fullscreen": false,
-        "resizable": true,
-        "title": "gimbal_sim",
+        "resizable": false,
         "width": 1280,
         "height": 720
       }
