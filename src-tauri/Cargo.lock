@@ -1103,6 +1103,7 @@ dependencies = [
  "clap",
  "gstreamer",
  "gstreamer-app",
+ "misb",
  "once_cell",
  "rand 0.8.5",
  "serde",
@@ -1955,6 +1956,12 @@ dependencies = [
  "adler",
  "simd-adler32",
 ]
+
+[[package]]
+name = "misb"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11212607254d323818fff9905f8ff8762134e3eb5306e703204a026177cae4f4"
 
 [[package]]
 name = "muldiv"
