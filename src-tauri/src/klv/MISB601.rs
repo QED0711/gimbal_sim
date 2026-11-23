@@ -247,11 +247,7 @@ impl Klv {
     }
 
     fn calc_checksum(klv: &Vec<u8>) -> u16 {
-        let mut sum: u32 = 0;
-        for &byte in klv {
-            sum = (sum + byte as u32) % 65536;
-        }
-        sum as u16
+        misb::klv::checksum(klv)
     }
 
     pub fn encode_to_klv(&self) -> Vec<u8> {
@@ -313,5 +309,31 @@ impl Klv {
         klv_data.extend_from_slice(&checksum.to_be_bytes());
 
         klv_data
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn packet_passes_st0601_checksum() {
+        let meta: Metadata = serde_json::from_value(serde_json::json!({
+            "precisionTimeStamp": 1_700_000_000_000_000u64,
+            "missionID": "SIM", "platformTailNumber": "N1",
+            "platformHeadingAngle": 92.5, "platformPitchAngle": 1.0, "platformRollAngle": -2.0,
+            "platformTrueAirSpeed": 40,
+            "platformDesignation": "SIM", "imageSourceSensor": "EO", "imageCoordinateSystem": "WGS-84",
+            "sensorLatitude": 38.8895, "sensorLongitude": -77.0353, "sensorTrueAltitude": 450.0,
+            "hfov": 10.0, "vfov": 6.0,
+            "sensorRelativeAzimuthAngle": 45.0, "sensorRelativeElevationAngle": -30.0, "sensorRelativeRollAngle": 0.0,
+            "frameCenterLatitude": 38.88, "frameCenterLongitude": -77.03, "frameCenterAltitude": 20.0
+        }))
+        .unwrap();
+        let bytes = Klv::from(meta).encode_to_klv();
+        let (packet, used) =
+            misb::st0601::Packet::parse(&bytes).expect("ST 0601 checksum must verify");
+        assert_eq!(used, bytes.len());
+        assert!((packet.sensor_position().unwrap().lat - 38.8895).abs() < 1e-6);
     }
 }
